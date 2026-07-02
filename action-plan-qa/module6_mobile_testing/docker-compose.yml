@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  appium:
+    image: appium/appium:latest
+    container_name: appium-server
+    ports:
+      - "4723:4723"
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+    command: appium --allow-insecure chromedriver_autodownload

@@ -1,0 +1,13 @@
+node_modules/
+reports/
+*.log
+.env
+.DS_Store
+*.apk
+*.ipa
+*.zip
+*.tar.gz
+reports/
+*.log
+*.json
+*.html

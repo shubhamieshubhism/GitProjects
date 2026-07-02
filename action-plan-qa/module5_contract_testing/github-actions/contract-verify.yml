@@ -1,0 +1,16 @@
+name: Contract Verification
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm install
+      - run: npm run start:product &
+      - run: npm run test:pact:consumer
+      - run: npm run test:pact:provider
+      - run: npm run test:openapi
+      - run: npm run test:functional

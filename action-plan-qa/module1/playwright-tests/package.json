@@ -1,0 +1,17 @@
+{
+    "name": "ecommerce-playwright-tests",
+    "version": "1.0.0",
+    "scripts": {
+        "test": "npx playwright test",
+        "test:ui": "npx playwright test --ui",
+        "start:app": "npx http-server . -p 3000 --silent",
+        "test:with-server": "start-server-and-test start:app http://localhost:3000 test"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.61.0",
+        "@types/node": "^25.9.3",
+        "http-server": "^14.1.1",
+        "start-server-and-test": "^2.0.3",
+        "typescript": "^5.4.5"
+    }
+}

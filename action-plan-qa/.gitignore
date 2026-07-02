@@ -1,0 +1,204 @@
+# ============================================================
+# NODE.JS
+# ============================================================
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp/
+.pnp.js
+
+# Logs and temporary files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
+*.tmp
+temp/
+*.lcov
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Coverage and reports
+coverage/
+.nyc_output/
+lib-cov/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+.serverless/
+.fusebox/
+.dynamodb/
+
+# TypeScript compiled outputs
+*.js.map
+*.d.ts.map
+*.tsbuildinfo
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Bower
+bower_components/
+
+# Grunt
+.grunt/
+
+# Cypress test artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/results/
+
+# Playwright test artifacts
+playwright-tests/test-results/
+playwright-tests/playwright-report/
+playwright-tests/test-report/
+playwright-tests/html-report/
+playwright-tests/.playwright/
+
+# Local storage / database files
+*.localstorage
+*.sqlite
+*.db
+
+# Screenshots and videos (from failed tests, etc.)
+*.png
+*.webm
+*.mp4
+
+
+# ============================================================
+# PYTHON
+# ============================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+virtualenv/
+.python-version
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+*.whl
+MANIFEST
+.installed.cfg
+
+# Package managers
+Pipfile.lock
+poetry.lock
+pip-log.txt
+pip-delete-this-directory.txt
+uv.lock
+.pdm.toml
+pdm.lock
+
+# Testing
+.tox/
+.nox/
+.pytest_cache/
+pytest.ini
+nosetests.xml
+test-results/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Linters / formatters
+.ruff_cache/
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+*.ipynb
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject.db
+.spyproject/
+.ropeproject/
+
+# mkdocs
+/site/
+
+# Scrapy
+.scrapy/
+
+# Sphinx docs
+docs/_build/
+
+# PyInstaller
+*.manifest
+*.spec

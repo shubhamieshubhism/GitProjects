@@ -1,0 +1,60 @@
+name: AI Failure Analysis
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests and capture failures (example)
+        run: |
+          # Simulate test run – in reality, run your test suite
+          # and capture any failures.
+          echo "Test failure: NoSuchElementException" > failure.log
+          echo "Test: test_login" >> failure.log
+          echo "Error: Element with id 'username' not found" >> failure.log
+
+      - name: AI Failure Analysis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python -c "
+          from src.ci_analysis.failure_classifier import FailureClassifier
+          classifier = FailureClassifier()
+          with open('failure.log') as f:
+              logs = f.read()
+          result = classifier.classify('test_login', 'NoSuchElementException', logs)
+          print(result)
+          # Save result to file for PR comment
+          import json
+          with open('failure_report.json', 'w') as out:
+              json.dump(result, out)
+          "
+
+      - name: Post PR comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('failure_report.json', 'utf8');
+            const data = JSON.parse(report);
+            const comment = `**AI Failure Analysis**\n\nClassification: ${data.classification}\n\nReasoning: ${data.reasoning}\n\nConfidence: ${data.confidence}%`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

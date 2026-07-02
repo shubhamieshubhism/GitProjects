@@ -1,0 +1,11 @@
+compare_snapshots_prompt: |
+  Compare the baseline DOM snapshot and the current DOM snapshot.
+  Determine if changes are:
+  - Intentional (UI redesign, content update)
+  - A bug (unexpected layout break, missing element)
+  - No meaningful change (test is flaky)
+
+  Provide a classification and explanation.
+
+  Baseline DOM: {baseline}
+  Current DOM: {current}

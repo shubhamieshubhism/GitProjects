@@ -1,0 +1,9 @@
+# Choose your model provider: "ollama" or "openai"
+MODEL_PROVIDER=ollama
+# If using OpenAI, set your API key
+OPENAI_API_KEY=your_key_here
+# For web search (Tavily) – get a free key at tavily.com
+TAVILY_API_KEY=your_tavily_key
+# Ollama base URL (default)
+OLLAMA_BASE_URL=http://localhost:11434
+# For DuckDuckGo (no key needed) – we'll use it as fallback if Tavily not available

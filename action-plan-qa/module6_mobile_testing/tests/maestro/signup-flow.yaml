@@ -1,0 +1,9 @@
+appId: com.example.app
+---
+- launchApp
+- tapOn: "Username"
+- inputText: "maestroUser"
+- tapOn: "Password"
+- inputText: "maestroPass"
+- tapOn: "Sign Up"
+- assertVisible: "Welcome, maestroUser"

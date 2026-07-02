@@ -1,0 +1,104 @@
+# ============================================================
+# Maven build output
+# ============================================================
+target/
+*.class
+
+# ============================================================
+# Mobile app binaries (large artifacts — don't commit)
+# APK/IPA files should be fetched from CI or a shared drive
+# ============================================================
+src/test/resources/App/*.apk
+src/test/resources/App/*.ipa
+src/test/resources/App/*.app
+
+# ============================================================
+# Credentials & sensitive config
+# NEVER commit real credentials. Copy credentials.properties.example
+# to credentials.properties and fill in your values locally.
+# Copy .env.example to .env and fill in your values locally.
+# ============================================================
+src/test/resources/credentials.properties
+.env
+
+# ============================================================
+# IntelliJ IDEA — exclude workspace-local / generated files
+# .idea/compiler.xml, encodings.xml, misc.xml, vcs.xml are safe to commit
+# ============================================================
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+*.iml
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+
+# Build output
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IDE - VS Code
+.vscode/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+logs/
+
+# Appium / test artifacts
+*.apk
+*.ipa
+*.aab
+allure-results/
+allure-report/
+screenshots/
+test-output/
+
+# Credentials / secrets
+*.properties
+!src/main/resources/*.properties
+
+# Temp
+*.tmp
+*.swp

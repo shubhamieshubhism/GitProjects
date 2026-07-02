@@ -1,0 +1,1 @@
+MODEL_NAME = "llama2"   # You can change to "mistral" or "phi"

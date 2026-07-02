@@ -1,0 +1,68 @@
+fix_test_prompt: |
+  <context>
+  Test code:
+  <test_code>
+  {{test_code}}
+  </test_code>
+
+  Error log:
+  <error_log>
+  {{error_log}}
+  </error_log>
+
+  Application context (optional):
+  <app_context>
+  {{app_context}}
+  </app_context>
+  </context>
+
+  <instructions>
+  You are an expert QA automation engineer. The above test has failed.
+  Identify the root cause and provide a fixed version of the test.
+  Use chain‑of‑thought reasoning:
+  1. Analyze the failure.
+  2. Identify the root cause type: locator change, timing issue, API change, data change, or assertion failure.
+  3. Propose up to 3 ranked fixes with confidence scores.
+  4. Provide the fixed test code with comments explaining the changes.
+  Ensure the fixed code:
+  - Preserves the original test intent.
+  - Uses robust selectors (prefer data‑testid or unique attributes).
+  - Handles waits appropriately.
+  </instructions>
+
+  <examples>
+  Example 1 (Stale element):
+  <broken>
+  driver.find_element(By.ID, 'submit-btn').click()
+  </broken>
+  <fixed>
+  # Wait for the element to become stale and then re‑locate
+  WebDriverWait(driver, 10).until(EC.staleness_of(driver.find_element(By.ID, 'submit-btn')))
+  submit_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, 'submit-btn')))
+  submit_btn.click()
+  </fixed>
+
+  Example 2 (Changed CSS selector):
+  <broken>
+  driver.find_element(By.CSS_SELECTOR, '.product-card .price').text
+  </broken>
+  <fixed>
+  # Selector changed from .product-card to .product-item
+  driver.find_element(By.CSS_SELECTOR, '.product-item .price').text
+  </fixed>
+  </examples>
+
+  <output_format>
+  Provide a JSON object with:
+  {
+    "root_cause": "<string>",
+    "fixes": [
+      {
+        "description": "<string>",
+        "confidence": <integer 0-100>,
+        "fixed_code": "<string>"
+      }
+    ],
+    "explanation": "<string>"
+  }
+  </output_format>

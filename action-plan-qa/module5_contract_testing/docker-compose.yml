@@ -1,0 +1,15 @@
+version: '3'
+services:
+  product-service:
+    build: ./backend/product-service
+    ports:
+      - "3000:3000"
+      - "50051:50051"
+    environment:
+      - NODE_ENV=test
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    ports:
+      - "9292:9292"
+    environment:
+      - PACT_BROKER_DATABASE_URL=sqlite:///pact_broker.sqlite

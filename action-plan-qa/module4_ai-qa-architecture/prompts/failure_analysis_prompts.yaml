@@ -1,0 +1,7 @@
+classify_failure_prompt: |
+  Classify the following test failure into one of: genuine bug, flaky test, environment issue, test code issue, application change.
+  Provide reasoning and confidence.
+
+  Test: {test_name}
+  Error: {error}
+  Logs: {logs}

@@ -1,0 +1,1 @@
+"""Hybrid QA Framework with local embeddings, Ollama, and OpenAI fallback."""

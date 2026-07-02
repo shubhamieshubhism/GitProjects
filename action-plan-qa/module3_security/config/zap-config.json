@@ -1,0 +1,13 @@
+{
+    "scanPolicy": {
+      "name": "Default Policy",
+      "rules": [
+        { "id": 90001, "enabled": true, "threshold": "MEDIUM" },
+        { "id": 90011, "enabled": true, "threshold": "MEDIUM" }
+      ]
+    },
+    "reports": {
+      "format": "html",
+      "outputDir": "reports"
+    }
+  }

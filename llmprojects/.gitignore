@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+embedding_cache/
+.env
+.venv
+
+# IDE
+.vscode/
+.idea/
+
+# Project specific
+*.pkl
+faiss_index.pkl
+data/my_docs.txt
+
+.DS_Store
+DS_Store
+
+# Logs
+*.log
+logs/
+log/
+
+*.txt
+*.csv
+*.json
+*.xml
+*.wav
+*.mp3
+*.jpeg
+*.jpg
+*.png
+*.gif
+*.pdf

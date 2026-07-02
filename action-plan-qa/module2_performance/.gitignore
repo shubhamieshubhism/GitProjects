@@ -1,0 +1,48 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# k6 output and reports
+reports/
+*.html
+*.json
+*.log
+*.tmp
+*.csv
+results/
+
+# Docker / monitoring volumes
+monitoring/prometheus-data/
+monitoring/grafana-data/
+monitoring/data/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Temporary test artifacts
+test-results/
+artifacts/
+
+# Optional: if you generate any coverage or profiling data
+coverage/
+.nyc_output/

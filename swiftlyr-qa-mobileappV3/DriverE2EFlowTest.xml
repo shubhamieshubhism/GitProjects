@@ -1,0 +1,24 @@
+<suite name="DriverE2E">
+    <test name="RefactoringFlow">
+        <parameter name="username" value="shubhamEmail"/>
+        <parameter name="password" value="shubhamPass"/>
+        <classes>
+            <class name="tests.JobsTicketTest">
+                <methods>
+                    <include name="refactoringAutomation"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    <test name="OfflineScenarios">
+        <parameter name="username" value="elonmuskEmail"/>
+        <parameter name="password" value="elonmuskPass"/>
+        <classes>
+            <class name="tests.JobsTicketTest">
+                <methods>
+                    <include name="offlineScenarios"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

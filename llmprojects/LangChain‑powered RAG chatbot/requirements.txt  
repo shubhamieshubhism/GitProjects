@@ -1,0 +1,5 @@
+langchain
+langchain_community
+pypdf
+chromadb
+sentence_transformers   # for local embeddings (if we use HuggingFace)

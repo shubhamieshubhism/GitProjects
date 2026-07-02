@@ -1,0 +1,52 @@
+name: Snapshot Auto-Fix
+on:
+  workflow_run:
+    workflows: ["CI Tests"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  auto-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download failure artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: test-artifacts
+          path: ./artifacts
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run AI snapshot analysis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Example: read baseline and current snapshots
+          python -c "
+          from src.snapshot.snapshot_analyzer import SnapshotAnalyzer
+          analyzer = SnapshotAnalyzer()
+          baseline = {'title': 'Login Page', 'elements': ['username', 'password']}
+          current = {'title': 'Login Page', 'elements': ['username', 'password', 'captcha']}
+          result = analyzer.compare(baseline, current)
+          print(result)
+          import json
+          with open('analysis_result.json', 'w') as f:
+              json.dump(result, f)
+          "
+
+      - name: Auto-fix and create PR
+        if: success()
+        run: |
+          # If analysis suggests update, create PR
+          python src/snapshot/auto_fixer.py --input analysis_result.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
