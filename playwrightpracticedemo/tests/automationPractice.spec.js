@@ -1,0 +1,20 @@
+import {test , expect}   from '@playwright/test';
+test('navigating to automation practice',async({page}) =>{
+    await page.goto("https://testautomationpractice.blogspot.com/");
+    await page.getByRole('link',{name :'PlaywrightPractice'}).click();
+    await expect(page.getByRole('heading',{name:'PlaywrightPractice'})).toBeVisible();
+    await page.getByRole('button',{name : 'Primary Action'}).click();
+    await page.getByRole('button',{name : 'Toggle Button'}).click();
+    await page.locator('#username').fill('Shubham Tirpude');
+    await page.getByRole('checkbox').first().check();
+    await expect(page.locator('strong',{hasText:'important'})).toBeVisible();
+    const submitForm= page.getByRole('button',{name :'Submit Form'});
+    await submitForm.scrollIntoViewIfNeeded();
+    await submitForm.click();
+    await page.mouse.wheel(0, 500); 
+    await page.getByLabel('Email Address:').fill('Shubham@gmail.com');
+    await page.getByLabel('Password:').fill('Shubham');
+    await page.getByLabel('Your Age:').fill('32');
+    await page.getByLabel(' Standard').check();
+    await page.getByLabel('  Express').check();
+});
