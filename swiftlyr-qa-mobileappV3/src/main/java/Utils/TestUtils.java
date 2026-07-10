@@ -133,7 +133,8 @@ public class TestUtils {
         swipe.addAction(finger.createPointerMove(Duration.ofMillis(700), PointerInput.Origin.viewport(), startX, endY));
         swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
 
-        driver.perform(Collections.singletonList(swipe));
+        //driver.perform(Collections.singletonList(swipe));
+        driver.perform(Arrays.asList(swipe));
 
     }
 

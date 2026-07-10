@@ -62,31 +62,124 @@ function countWordsLoop(str) {
   return count;
 }
 
-function toUpperCaseManual(str){
-    let result ='';
-    for (let i =0;i<str.length;i++){
-        const code =str.charCodeAt(i)
-        if(code >= 97 && code <= 122){
-            result += String.fromCharCode(code -32)
-        }else{
-            result += str.charAt(i)
-        }
+function toUpperCaseManual(str) {
+  let result = "";
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code >= 97 && code <= 122) {
+      result += String.fromCharCode(code - 32);
+    } else {
+      result += str.charAt(i);
     }
-    return result
+  }
+  return result;
 }
-function toLoweCaseManual(str){
-    let result =''
-    for(let i=0;i<str.length;i++){
-        const code = str.charCodeAt(i)
-        if(code >=65 && code <= 90){
-            result+=String.fromCharCode(code + 32)
-        }else{
-            result+= str.charAt(i)
-        }
+function toLoweCaseManual(str) {
+  let result = "";
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code >= 65 && code <= 90) {
+      result += String.fromCharCode(code + 32);
+    } else {
+      result += str.charAt(i);
     }
-    return result
+  }
+  return result;
 }
 
-const text = 'Hello world ! 123'
-console.log(toLoweCaseManual(text))
-console.log(toUpperCaseManual(text))
+function areEqualManual(str1, str2) {
+  if (str1 == null || str2 == null) {
+    return str1 === str2;
+  }
+  if (str1.length != str2.length) return false;
+
+  for (let i = 0; i < str1.length; i++) {
+    if (str1.charAt(i) != str2.charAt(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+function areEqualManualWhile(str1, str2) {
+  if (str1 == null || str2 == null) {
+    return str1 === str2;
+  }
+  if (str1.length != str2.length) return false;
+
+  let i = 0;
+  while (i < str1.length) {
+    if (str1.charAt(i) != str2.charAt(i)) {
+      return false;
+    }
+    i++;
+  }
+  return true;
+}
+// console.log(areEqualManual("hello","Hello"))
+// console.log(areEqualManualWhile("hello","Hello"))
+
+function firstNonRepetitiveChar(str) {
+  const freq = {};
+  for (let ch of str) {
+    freq[ch] = (freq[ch] || 0) + 1;
+  }
+  for (let ch of str) {
+    if (freq[ch] === 1) {
+      return ch;
+    }
+  }
+  return null;
+}
+//console.log(firstNonRepetitiveChar("leeltcode"))
+
+function mostFrequentChar(str) {
+  if (str.length === 0) return null;
+  const freq = {};
+  for (let ch of str) {
+    freq[ch] = (freq[ch] || 0) + 1;
+  }
+
+  let maxCount = 0;
+  let maxChar = str[0];
+  for (let ch in freq) {
+    if (freq[ch] > maxCount) {
+      maxCount = freq[ch];
+      maxChar = ch;
+    }
+  }
+  return maxChar;
+}
+//console.log(mostFrequentChar("successfull"))
+
+function removeDuplicates(str) {
+  const seen = new Set();
+  let result = "";
+  for (const ch of str) {
+    if (!seen.has(ch)) {
+      seen.add(ch);
+      result += ch;
+    }
+  }
+  return result;
+}
+console.log(removeDuplicates("sucessfull"));
+
+/*
+Check if a string is a rotation of another string (e.g."abcd" and "cdab").
+In javascript we use .includes mehtod in the return statement 
+ie return (str1+str1).include(str2)
+*/
+
+//Find all substrings of a given string
+function findAllSubString(str) {
+  const substrings = [];
+  const n = str.length;
+  for (let i = 0; i < n; i++) {
+    for (let j = i; j < n; j++) {
+      substrings.push(str.substring(i, j + 1));
+    }
+  }
+  return substrings;
+}
+const result = findAllSubString("abcdefg");
+console.log(result);
