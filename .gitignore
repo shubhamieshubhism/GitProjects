@@ -131,3 +131,20 @@ embedding_cache/
 *.pickle
 *.sqlite
 *.db
+
+# ============================================================
+# Spring Boot / Java (additional)
+# ============================================================
+# Spring Boot DevTools restart folder
+.restart/
+# Generated sources
+/generated-sources/
+/generated-test-sources/
+/generated-resources/
+# Maven shaded/repackaged files
+dependency-reduced-pom.xml
+original-artifact.properties
+# JVM crash logs
+hs_err_pid*
+# Spring Boot runtime log
+spring.log
