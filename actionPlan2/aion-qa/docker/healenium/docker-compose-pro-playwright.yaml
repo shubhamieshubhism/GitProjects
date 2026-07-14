@@ -1,0 +1,87 @@
+services:
+  postgres-db:
+    image: postgres:15
+    container_name: healenium-postgres
+    environment:
+      POSTGRES_DB: healenium
+      POSTGRES_USER: healenium_user
+      POSTGRES_PASSWORD: YDk2nmNs4s9aCP6K
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - healenium-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U healenium_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  healenium-backend:
+    image: healenium/hlm-backend:3.5.3
+    container_name: healenium-backend
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      SPRING_POSTGRES_DB: healenium
+      SPRING_POSTGRES_SCHEMA: healenium
+      SPRING_POSTGRES_USER: healenium_user
+      SPRING_POSTGRES_PASSWORD: YDk2nmNs4s9aCP6K
+      SPRING_POSTGRES_DB_HOST: postgres-db
+    ports:
+      - "7878:7878"
+    networks:
+      - healenium-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7878/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  selector-imitator:
+    image: healenium/hlm-selector-imitator:1.6
+    container_name: healenium-selector-imitator
+    depends_on:
+      healenium-backend:
+        condition: service_healthy
+    environment:
+      HEALENIUM_SERVER_URL: http://healenium-backend:7878
+    networks:
+      - healenium-network
+
+  playwright-proxy:
+    image: healenium/hlm-proxy:2.2.1
+    container_name: healenium-playwright-proxy
+    depends_on:
+      selector-imitator:
+        condition: service_started
+      healenium-backend:
+        condition: service_healthy
+    environment:
+      HEALENIUM_SERVER_URL: http://healenium-backend:7878
+      IMITATE_SERVICE: http://selector-imitator:8000
+      HEAL_ENABLED: "true"
+      RECOVERY_TRIES: "3"
+      SCORE_CAP: "0.6"
+      HLM_LOG_LEVEL: "info"
+    ports:
+      - "8085:8085"
+      - "8086:8086"
+    networks:
+      - healenium-network
+
+  playwright-server:
+    image: mcr.microsoft.com/playwright:v1.40.0-jammy
+    container_name: healenium-playwright-server
+    command: sh -c "npx playwright install && npx playwright run-server --port 8087"
+    ports:
+      - "8087:8087"
+    networks:
+      - healenium-network
+
+networks:
+  healenium-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

@@ -1,0 +1,103 @@
+name: AI-Native Test Suite with RCA
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  BASE_URL: 'http://localhost:3000'
+
+jobs:
+  test-and-rca:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Healenium services
+        run: |
+          cd docker/healenium
+          docker-compose -f docker-compose-pro-playwright.yaml up -d
+          sleep 30
+
+      - name: Start test application
+        run: |
+          npm run start:test-app &
+          sleep 10
+
+      - name: Run Playwright tests
+        id: tests
+        run: |
+          npx playwright test --reporter=json,list
+        continue-on-error: true
+
+      - name: Capture test logs
+        if: steps.tests.outcome == 'failure'
+        run: |
+          mkdir -p test-results/logs
+          cp test-results/results.json test-results/logs/ || true
+
+      - name: Run RCA (Root Cause Analysis)
+        if: steps.tests.outcome == 'failure'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'openai' }}
+        run: |
+          python3 src/rca/rca.py \
+            --log-dir test-results/logs \
+            --output rca-summary.md \
+            --provider ${{ env.LLM_PROVIDER }}
+
+      - name: Post RCA Summary to PR
+        if: github.event_name == 'pull_request' && steps.tests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let summary = '## 🔍 Root Cause Analysis\n\n';
+            try {
+              const rcaContent = fs.readFileSync('rca-summary.md', 'utf8');
+              summary += rcaContent;
+            } catch (e) {
+              summary += '⚠️ RCA summary could not be generated.';
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results/
+            playwright-report/
+            rca-summary.md
+          retention-days: 7
+
+      - name: Shutdown Healenium
+        if: always()
+        run: |
+          cd docker/healenium
+          docker-compose -f docker-compose-pro-playwright.yaml down

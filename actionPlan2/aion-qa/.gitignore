@@ -1,0 +1,10 @@
+node_modules/
+test-results/
+playwright-report/
+.env
+docker/healenium/.env
+src/visual-test/backstop/test-results/
+src/visual-test/backstop/html_report/
+src/visual-test/backstop/ci_report/
+*.log
+.DS_Store

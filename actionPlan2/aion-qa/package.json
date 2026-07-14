@@ -1,0 +1,23 @@
+{
+  "name": "aion-qa",
+  "version": "1.0.0",
+  "description": "AI-Native QA Orchestrator – End-to-end automation system",
+  "main": "index.js",
+  "scripts": {
+    "start:test-app": "echo 'Please start your test application here' && exit 1",
+    "test": "playwright test --config=playwright.config.js",
+    "test:headed": "playwright test --headed --config=playwright.config.js",
+    "test:debug": "playwright test --debug --config=playwright.config.js",
+    "pom:generate": "node src/pom-generator/generate-pom.js",
+    "backstop:reference": "backstop reference --config=src/visual-test/backstop/backstop.config.js",
+    "backstop:test": "backstop test --config=src/visual-test/backstop/backstop.config.js",
+    "backstop:approve": "backstop approve --config=src/visual-test/backstop/backstop.config.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "backstopjs": "^6.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

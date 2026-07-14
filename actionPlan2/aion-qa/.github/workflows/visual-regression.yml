@@ -1,0 +1,91 @@
+name: Visual Regression Testing
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**/*.css'
+      - 'src/**/*.scss'
+      - 'src/**/*.tsx'
+      - 'src/**/*.jsx'
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install BackstopJS
+        run: npm install -g backstopjs
+
+      - name: Start test application
+        run: |
+          npm run start:test-app &
+          sleep 10
+
+      - name: Generate visual baselines (if not exist)
+        run: |
+          if [ ! -d "src/visual-test/backstop/baseline" ]; then
+            npm run backstop:reference
+          fi
+
+      - name: Run visual regression tests
+        id: visual
+        run: |
+          npm run backstop:ci || true
+        continue-on-error: true
+
+      - name: Check if visual tests passed
+        id: check
+        run: |
+          if [ -f "src/visual-test/backstop/ci_report/backstop-report.json" ]; then
+            FAILED=$(jq '.tests[].status' src/visual-test/backstop/ci_report/backstop-report.json | grep -c "fail" || echo "0")
+            if [ "$FAILED" -gt 0 ]; then
+              echo "status=failed" >> $GITHUB_OUTPUT
+            else
+              echo "status=passed" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "status=unknown" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload visual diff artifacts
+        if: steps.check.outputs.status == 'failed'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: |
+            src/visual-test/backstop/html_report/
+            src/visual-test/backstop/ci_report/
+            src/visual-test/backstop/test-results/
+          retention-days: 7
+
+      - name: Post visual diff to PR
+        if: steps.check.outputs.status == 'failed' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let comment = '## 🎨 Visual Regression Failed\n\n';
+            comment += 'UI changes detected. Please review the visual diffs.\n';
+            comment += 'Download the diff artifacts from the workflow run.';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail workflow if visual regression detected
+        if: steps.check.outputs.status == 'failed'
+        run: exit 1
