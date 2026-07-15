@@ -20,34 +20,32 @@ import com.sgtsoftsol.journalapp.entity.JournalEntry;
 @RequestMapping("/journal")
 public class JournalEntryController {
 
-    private Map <Long, JournalEntry> jouranlEntries = new HashMap<>();
+    private Map<Long, JournalEntry> jouranlEntries = new HashMap<>();
 
     @GetMapping
-    public List < JournalEntry> getAll(){
+    public List<JournalEntry> getAll() {
         return new ArrayList<>(jouranlEntries.values());
     }
 
     @PostMapping
-    public boolean createEntry(@RequestBody JournalEntry myEntry){
+    public boolean createEntry(@RequestBody JournalEntry myEntry) {
         jouranlEntries.put(myEntry.getId(), myEntry);
         return true;
 
-    } 
+    }
 
     @GetMapping("id/{myId}")
-    public JournalEntry getJournalEntryById(@PathVariable Long myId){
+    public JournalEntry getJournalEntryById(@PathVariable Long myId) {
         return jouranlEntries.get(myId);
     }
 
-
     @DeleteMapping("id/{myId}")
-    public JournalEntry delteJournalEntryByIt(@PathVariable Long myId){
+    public JournalEntry delteJournalEntryByIt(@PathVariable Long myId) {
         return jouranlEntries.remove(myId);
     }
 
     @PutMapping("/id/{id}")
-    public JournalEntry updateJpournalBYId(@PathVariable Long id ,@RequestBody JournalEntry myEntry ){
+    public JournalEntry updateJpournalBYId(@PathVariable Long id, @RequestBody JournalEntry myEntry) {
         return jouranlEntries.put(id, myEntry);
     }
-    
 }
