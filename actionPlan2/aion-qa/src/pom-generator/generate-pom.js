@@ -120,6 +120,11 @@ async function generatePOMFromDOM(url, outputPath) {
   const summary = createTokenEfficientSummary(semanticElements);
   const prompt = buildPOMPrompt(summary, pageInfo);
   const generatedCode = await callLLM(prompt);
+
+  if (typeof generatedCode !== 'string' || generatedCode.trim().length === 0) {
+    throw new Error('LLM returned an empty or invalid response. Check your provider configuration and API key.');
+  }
+
   fs.writeFileSync(outputPath, generatedCode, 'utf-8');
   return generatedCode;
 }
@@ -166,7 +171,7 @@ function buildPOMPrompt(elements, pageInfo) {
 
 async function callLLM(prompt) {
   const provider = process.env.LLM_PROVIDER || 'openai';
-  
+
   if (provider === 'openai') {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -180,20 +185,33 @@ async function callLLM(prompt) {
         temperature: 0.3,
       }),
     });
+
     const data = await response.json();
-    console.log('LLM API response:', JSON.stringify(data, null, 2));
+
+    if (!response.ok || !data.choices?.[0]?.message?.content) {
+      const message = data?.error?.message || 'OpenAI request failed without a detailed error message.';
+      throw new Error(`OpenAI error: ${message}`);
+    }
+
     return data.choices[0].message.content;
   } else if (provider === 'ollama') {
-    const response = await fetch('http://localhost:11434/api/generate', {
+    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+    const response = await fetch(`${ollamaBaseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: process.env.OLLAMA_MODEL || 'llama3',
+        model: process.env.OLLAMA_MODEL || 'llama3:latest',
         prompt: prompt,
         stream: false,
       }),
     });
+
     const data = await response.json();
+
+    if (!response.ok || typeof data.response !== 'string' || data.response.trim().length === 0) {
+      throw new Error(`Ollama error: ${JSON.stringify(data)}`);
+    }
+
     return data.response;
   }
   throw new Error('Unsupported LLM provider');

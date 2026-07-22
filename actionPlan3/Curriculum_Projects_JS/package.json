@@ -1,0 +1,19 @@
+{
+  "name": "llm-evaluation-ollama-js",
+  "version": "1.0.0",
+  "description": "JavaScript implementation of RAG evaluation, hallucination detection, and trust scoring using local Ollama.",
+  "scripts": {
+    "test": "jest",
+    "module1": "node Module_01_RAG_Evaluation_Triad/rag_faithfulness_eval.js",
+    "module2": "node Module_02_Hallucination_Detection/hallucination_scanner.js",
+    "module3": "node Module_03_Adversarial_Testing/injection_scanner.js",
+    "module4": "jest Module_04_Evaluation_Pipelines",
+    "final": "node Final_Project_AI_Trust_Score_Engine/trust_engine.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

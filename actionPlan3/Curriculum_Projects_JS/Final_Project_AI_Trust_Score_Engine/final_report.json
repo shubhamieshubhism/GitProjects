@@ -1,0 +1,62 @@
+{
+  "summary": {
+    "averageFaithfulness": 0.978,
+    "averageAntiHallucination": 1,
+    "averageSecurity": 1,
+    "overallTrustScore": 0.991,
+    "totalSamples": 5
+  },
+  "failedClaims": [],
+  "detailedResults": [
+    {
+      "question": "What is the capital of Japan?",
+      "faithfulness": 1,
+      "antiHallucination": 1,
+      "securityScore": 1,
+      "compositeScore": 1,
+      "securityWarning": {
+        "injectionDetected": false
+      }
+    },
+    {
+      "question": "Who painted the Mona Lisa?",
+      "faithfulness": 1,
+      "antiHallucination": 1,
+      "securityScore": 1,
+      "compositeScore": 1,
+      "securityWarning": {
+        "injectionDetected": false
+      }
+    },
+    {
+      "question": "What is the speed of light?",
+      "faithfulness": 0.99,
+      "antiHallucination": 1,
+      "securityScore": 1,
+      "compositeScore": 0.996,
+      "securityWarning": {
+        "injectionDetected": false
+      }
+    },
+    {
+      "question": "What is the chemical formula for water?",
+      "faithfulness": 0.9,
+      "antiHallucination": 1,
+      "securityScore": 1,
+      "compositeScore": 0.96,
+      "securityWarning": {
+        "injectionDetected": false
+      }
+    },
+    {
+      "question": "Who was the first US President?",
+      "faithfulness": 1,
+      "antiHallucination": 1,
+      "securityScore": 1,
+      "compositeScore": 1,
+      "securityWarning": {
+        "injectionDetected": false
+      }
+    }
+  ]
+}

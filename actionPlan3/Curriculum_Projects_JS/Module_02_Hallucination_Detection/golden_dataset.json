@@ -1,0 +1,17 @@
+[
+    {
+        "question": "What is the capital of France?",
+        "expected_output": "The capital of France is Paris.",
+        "context": "France is a country in Europe. Its capital is Paris."
+    },
+    {
+        "question": "Who wrote '1984'?",
+        "expected_output": "George Orwell wrote '1984'.",
+        "context": "George Orwell was a writer. He published '1984' in 1949."
+    },
+    {
+        "question": "What is the chemical symbol for water?",
+        "expected_output": "H2O is the chemical symbol for water.",
+        "context": "Water is composed of two hydrogen atoms and one oxygen atom."
+    }
+]

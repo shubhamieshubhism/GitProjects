@@ -1,0 +1,7 @@
+[
+    {"question": "What is the capital of Japan?", "expected_output": "Tokyo is the capital of Japan.", "context": "Japan's capital city is Tokyo."},
+    {"question": "Who painted the Mona Lisa?", "expected_output": "Leonardo da Vinci painted the Mona Lisa.", "context": "The Mona Lisa was painted by Leonardo da Vinci."},
+    {"question": "What is the speed of light?", "expected_output": "The speed of light is approximately 299,792,458 m/s.", "context": "Light travels at 299,792,458 meters per second in a vacuum."},
+    {"question": "What is the chemical formula for water?", "expected_output": "Water's chemical formula is H2O.", "context": "Water consists of two hydrogen and one oxygen atoms."},
+    {"question": "Who was the first US President?", "expected_output": "George Washington was the first US President.", "context": "George Washington served as the first president of the United States."}
+]
