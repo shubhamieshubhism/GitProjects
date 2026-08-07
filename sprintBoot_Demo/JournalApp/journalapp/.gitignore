@@ -1,33 +1,68 @@
 HELP.md
+
+# Maven / Spring Boot build output
 target/
-.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Maven wrapper
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
 
-### IntelliJ IDEA ###
-.idea
-*.iws
+# IDE files
+.idea/
 *.iml
+*.iws
 *.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+.apt_generated/
+.factorypath
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+*.pid
+*.seed
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test reports
+surefire-reports/
+failsafe-reports/
+
+# Local environment files
+env/
+.env
+.env.*
+!.env.example
+
+# AI tool directories
+.claude/
+.kilo/
+
+# AI tool configuration files
+.clinerules
+.cursorrules
+.roomodes
+.windsurfrules
+CLAUDE.md
+CONVENTIONS.md
+HELP.md

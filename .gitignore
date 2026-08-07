@@ -148,3 +148,8 @@ original-artifact.properties
 hs_err_pid*
 # Spring Boot runtime log
 spring.log
+
+
+**/App/
+**/resources/
+**/suites/

@@ -1,7 +1,5 @@
 package JAVA;
 
-import java.util.Arrays;
-
 public class SearchAlgorithms {
     public static int binarySearch(int[] arr, int target) {
         int left = 0;

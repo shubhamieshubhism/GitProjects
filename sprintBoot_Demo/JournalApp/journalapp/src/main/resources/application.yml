@@ -1,11 +1,9 @@
 spring:
-  data:
-    mongodb:
-      uri: ${MONGODB_URI:mongodb+srv://shubhamtirpude20_db_user:Shubham2023@cluster0.ikif9rc.mongodb.net}
-      database: journaldb
-      auto-index-creation: true
+  profiles:
+    active: dev
 
-server:
-  port: 8081
-  servlet:
-    context-path: /journal
+logging:
+  level:
+    com:
+      sgtsoftsol:
+        journalapp: DEBUG
