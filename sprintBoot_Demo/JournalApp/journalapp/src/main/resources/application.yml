@@ -7,3 +7,7 @@ logging:
     com:
       sgtsoftsol:
         journalapp: DEBUG
+
+weather:
+  api:
+    key: e493bfb294eb4da7cd88df030c73747a

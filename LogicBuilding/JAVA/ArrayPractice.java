@@ -1,12 +1,12 @@
 package JAVA;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
-
 public class ArrayPractice {
-    
 
     public static int findLargestElement(int[] arr) {
         int n = arr.length;
@@ -49,7 +49,7 @@ public class ArrayPractice {
         return secondLarge;
     }
 
-    public static boolean isSorted(int [] nums) {
+    public static boolean isSorted(int[] nums) {
         int n = nums.length;
         for (int i = 1; i < n; i++) {
 
@@ -110,38 +110,95 @@ public class ArrayPractice {
 
     public static int missingNumber(int[] nums) {
         int maxNumber = nums[0];
-        for(int num : nums){
-            if(num > maxNumber){
-                maxNumber=num;
+        for (int num : nums) {
+            if (num > maxNumber) {
+                maxNumber = num;
             }
         }
-        int expectedSum = maxNumber * (maxNumber+1)/2;
+        int expectedSum = maxNumber * (maxNumber + 1) / 2;
         int actualSum = 0;
-        for(int num : nums){
-            actualSum+=num;
+        for (int num : nums) {
+            actualSum += num;
         }
         return expectedSum - actualSum;
     }
 
-    public static int findMaximumConsOne(int [] nums){
+    public static int findMaximumConsOne(int[] nums) {
         int count = 0;
         int max = 0;
-        for(int i =0;i<nums.length;i++){
-            if(nums[i]==1){
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] == 1) {
                 count++;
-            }else{
-                count=0;
+            } else {
+                count = 0;
             }
-            max=Math.max(max, count);
+            max = Math.max(max, count);
         }
         return max;
     }
 
+    public static int longestSubarray(int[] nums, int k) {
+        int n = nums.length;
+        int left = 0;
+        int right = 0;
+        int maxLen = 0;
+        int sum = nums[0];
+        while (right < n) {
+            while (left <= right && sum > k) {
+                sum -= nums[left];
+                left++;
+            }
+            if (sum == k) {
+                maxLen = Math.max(maxLen, right - left + 1);
+            }
+            right++;
+            if (right < n) {
+                sum += nums[right];
+            }
+        }
+        return maxLen;
+    }
+
+    public static int[] twoSumIndices(int[] arr, int target) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < arr.length; i++) {
+            int compliment = target - arr[i];
+            if (map.containsKey(compliment)) {
+                return new int[] { map.get(compliment), i };
+            }
+            map.put(arr[i], i);
+        }
+        return new int[] { -1, -1 };
+    }
+
+    public static int[] twoSumOA(int[] nums, int target) {
+        int n = nums.length;
+        int[][] numsWithIndex = new int[n][2];
+        for (int i = 0; i < n; i++) {
+            numsWithIndex[i][0] = nums[i];
+            numsWithIndex[i][1] = i;
+        }
+        Arrays.sort(numsWithIndex, (a, b) -> Integer.compare(a[0], b[0]));
+        int left = 0;
+        int right = n - 1;
+        while (left < right) {
+            int sum = numsWithIndex[left][0] + numsWithIndex[right][0];
+            if (sum == target) {
+                return new int[] { numsWithIndex[left][1], numsWithIndex[right][1] };
+            } else if (sum < target) {
+                left++;
+            } else {
+                right--;
+            }
+        }
+        return new int[] { -1, -1 };
+    }
+
     public static void main(String[] args) {
-        int[] nums1 = { 1,1,0,0,1,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1};
-        System.out.println("The consicutive ones in a row  --> " + findMaximumConsOne(nums1));
-        
-    
+        int[] arr = { 2, 6, 5, 8, 11 };
+        int target = 14;
+
+        System.out.println("result " + Arrays.toString(twoSumOA(arr, target)));
 
     }
 
