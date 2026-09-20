@@ -1,0 +1,2701 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Terra — Interactive Geography & Earth Explorer</title>
+<style>
+/* ============================== THEME TOKENS ============================== */
+:root{
+  --bg:#070b14; --bg-soft:#0b1120; --panel:rgba(255,255,255,.045); --panel-2:rgba(255,255,255,.07);
+  --border:rgba(255,255,255,.10); --border-2:rgba(255,255,255,.16);
+  --text:#e9effc; --muted:#8fa1c0; --dim:#64748b;
+  --accent:#4ea8ff; --accent-2:#41e0b0; --hot:#ff7a59; --warn:#ffc24b; --violet:#a78bfa;
+  --shadow:0 18px 50px -20px rgba(0,0,0,.85);
+  --r:16px; --r-sm:10px;
+  --grad:linear-gradient(135deg,#4ea8ff 0%,#41e0b0 100%);
+}
+[data-theme="light"]{
+  --bg:#eef3fb; --bg-soft:#ffffff; --panel:rgba(12,34,66,.04); --panel-2:rgba(12,34,66,.07);
+  --border:rgba(12,34,66,.13); --border-2:rgba(12,34,66,.22);
+  --text:#0c1a2e; --muted:#5a6c88; --dim:#7b8aa3;
+  --accent:#1b74e4; --accent-2:#0a9c73; --hot:#e2542c; --warn:#c98600; --violet:#7c5cf0;
+  --shadow:0 18px 40px -24px rgba(12,34,66,.35);
+  --grad:linear-gradient(135deg,#1b74e4 0%,#0a9c73 100%);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.55; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(1100px 620px at 78% -10%, rgba(78,168,255,.16), transparent 60%),
+    radial-gradient(900px 560px at 8% 105%, rgba(65,224,176,.11), transparent 60%);
+}
+[data-theme="light"] body::before{
+  background:
+    radial-gradient(1100px 620px at 78% -10%, rgba(27,116,228,.10), transparent 60%),
+    radial-gradient(900px 560px at 8% 105%, rgba(10,156,115,.09), transparent 60%);
+}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:20px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ============================== LAYOUT ============================== */
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.sidebar{
+  width:250px;flex:none;position:fixed;top:0;bottom:0;left:0;z-index:40;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(18px);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:20px 14px;gap:6px;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 10px 18px}
+.brand .mark{
+  width:34px;height:34px;border-radius:11px;background:var(--grad);
+  display:grid;place-items:center;font-size:17px;box-shadow:0 8px 22px -10px var(--accent);
+}
+.brand h1{font-size:16px;font-weight:750;letter-spacing:-.3px}
+.brand span{display:block;font-size:10.5px;color:var(--muted);font-weight:500;letter-spacing:.4px;text-transform:uppercase}
+.navlink{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;
+  color:var(--muted);font-size:14px;font-weight:550;transition:.18s;cursor:pointer;width:100%;text-align:left;
+}
+.navlink:hover{background:var(--panel);color:var(--text)}
+.navlink.active{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.navlink.active .ico{filter:none;opacity:1}
+.navlink .ico{font-size:16px;width:20px;text-align:center;opacity:.85}
+.sidebar-foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
+.content{margin-left:250px;flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;
+  padding:12px 26px;background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
+}
+.searchbox{
+  flex:1;max-width:520px;display:flex;align-items:center;gap:9px;
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:9px 13px;transition:.2s;
+}
+.searchbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.searchbox input{flex:1;background:none;border:none;outline:none;font-size:13.5px}
+.searchbox input::placeholder{color:var(--dim)}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.iconbtn{
+  width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  background:var(--panel);border:1px solid var(--border);transition:.18s;font-size:15px;
+}
+.iconbtn:hover{background:var(--panel-2);transform:translateY(-1px)}
+main#view{padding:26px;max-width:1500px;width:100%;margin:0 auto;flex:1}
+.bottomnav{display:none}
+
+/* ============================== PRIMITIVES ============================== */
+.card{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;transition:.22s;position:relative;overflow:hidden;
+}
+.card.hoverable:hover{transform:translateY(-3px);border-color:var(--border-2);background:var(--panel-2);box-shadow:var(--shadow)}
+.card h3{font-size:15px;font-weight:680;letter-spacing:-.2px}
+.card p{font-size:13px;color:var(--muted)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.row{display:flex;align-items:center;gap:10px}
+.wrap{flex-wrap:wrap}
+.spacer{flex:1}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:600;background:var(--panel-2);border:1px solid var(--border);color:var(--muted);
+}
+.chip.accent{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.chip.green{color:var(--accent-2);border-color:color-mix(in srgb,var(--accent-2) 40%,transparent);background:color-mix(in srgb,var(--accent-2) 12%,transparent)}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:11px;
+  font-size:13.5px;font-weight:620;border:1px solid var(--border);background:var(--panel);transition:.18s;
+}
+.btn:hover{background:var(--panel-2);transform:translateY(-1px)}
+.btn.primary{background:var(--grad);color:#04121f;border-color:transparent;box-shadow:0 10px 26px -14px var(--accent)}
+[data-theme="light"] .btn.primary{color:#fff}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+.section-head{display:flex;align-items:flex-end;gap:14px;margin:34px 0 14px;flex-wrap:wrap}
+.section-head h2{font-size:21px;font-weight:750;letter-spacing:-.5px}
+.section-head p{font-size:13px;color:var(--muted)}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.crumbs{display:flex;gap:7px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.crumbs button{color:var(--muted);font-size:12px}
+.crumbs button:hover{color:var(--accent)}
+.divider{height:1px;background:var(--border);margin:22px 0}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.tiny{font-size:11px}
+.bar{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--grad);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.bullets{list-style:none;display:grid;gap:8px}
+.bullets li{position:relative;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.bullets li::before{content:"";position:absolute;left:2px;top:8px;width:6px;height:6px;border-radius:99px;background:var(--accent)}
+
+/* ============================== HERO ============================== */
+.hero{
+  position:relative;border-radius:24px;overflow:hidden;border:1px solid var(--border);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--bg-soft) 92%,transparent),color-mix(in srgb,var(--bg) 70%,transparent));
+  display:grid;grid-template-columns:1.05fr .95fr;min-height:440px;
+}
+.hero-copy{padding:44px 40px;display:flex;flex-direction:column;justify-content:center;gap:16px;z-index:2}
+.hero h2{font-size:clamp(30px,4.2vw,50px);line-height:1.05;font-weight:800;letter-spacing:-1.6px}
+.hero h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:15.5px;color:var(--muted);max-width:52ch}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.hero-globe{position:relative;min-height:400px}
+.globe-wrap{position:absolute;inset:0}
+.globe-canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+.globe-canvas:active{cursor:grabbing}
+.globe-hint{
+  position:absolute;left:14px;bottom:12px;font-size:11px;color:var(--muted);
+  background:color-mix(in srgb,var(--bg) 72%,transparent);padding:5px 10px;border-radius:99px;border:1px solid var(--border);
+  backdrop-filter:blur(8px);pointer-events:none;
+}
+.css-globe{
+  position:absolute;inset:12%;border-radius:50%;
+  background:
+    radial-gradient(circle at 32% 28%, #6fc3ff 0%, #1b74e4 34%, #0b2a4a 68%, #04101f 100%);
+  box-shadow:inset -22px -18px 60px rgba(0,0,0,.75),0 0 90px -10px rgba(78,168,255,.5);
+  animation:spinpulse 12s ease-in-out infinite;
+}
+.css-globe::after{
+  content:"";position:absolute;inset:-8%;border-radius:50%;
+  background:radial-gradient(circle,rgba(78,168,255,.28),transparent 62%);
+}
+@keyframes spinpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+
+/* ============================== GLOBE VIEW ============================== */
+.globe-stage{
+  position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--border);
+  background:radial-gradient(circle at 50% 45%,#0a1626,#03060d 72%);min-height:520px;height:min(72vh,720px);
+}
+[data-theme="light"] .globe-stage{background:radial-gradient(circle at 50% 45%,#dce9f9,#b9cde6 72%)}
+.layerbar{
+  position:absolute;top:14px;left:14px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 28px);
+}
+.layerbtn{
+  padding:7px 12px;border-radius:99px;font-size:11.5px;font-weight:620;
+  background:color-mix(in srgb,#000 42%,transparent);border:1px solid var(--border);
+  color:#cfe0f5;backdrop-filter:blur(10px);transition:.18s;
+}
+.layerbtn:hover{background:color-mix(in srgb,#000 25%,transparent)}
+.layerbtn.active{background:var(--grad);color:#04121f;border-color:transparent}
+[data-theme="light"] .layerbtn{background:rgba(255,255,255,.82);color:#123;border-color:var(--border)}
+[data-theme="light"] .layerbtn.active{color:#fff}
+.globe-info{
+  position:absolute;right:14px;bottom:14px;z-index:5;width:min(320px,calc(100% - 28px));
+  background:color-mix(in srgb,var(--bg) 86%,transparent);border:1px solid var(--border);
+  border-radius:14px;padding:14px;backdrop-filter:blur(14px);
+}
+.globe-info h4{font-size:13.5px;margin-bottom:4px}
+.globe-info p{font-size:12px;color:var(--muted)}
+
+/* ============================== TIMELINE ============================== */
+.tl-track{
+  position:relative;display:flex;height:56px;border-radius:14px;overflow:hidden;border:1px solid var(--border);
+}
+.tl-seg{position:relative;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;
+  color:#04121f;letter-spacing:.4px;cursor:pointer;transition:.2s;overflow:hidden;white-space:nowrap}
+.tl-seg:hover{filter:brightness(1.14)}
+.tl-seg.active{box-shadow:inset 0 0 0 3px var(--text)}
+.tl-slider{width:100%;margin:18px 0 4px;accent-color:var(--accent);height:26px}
+.tl-marks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim)}
+
+/* ============================== MISC BLOCKS ============================== */
+.whyflow{display:grid;gap:0}
+.why-step{
+  display:flex;gap:12px;align-items:flex-start;padding:11px 0;
+}
+.why-step .dot{
+  width:26px;height:26px;flex:none;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:750;
+  background:var(--panel-2);border:1px solid var(--border);color:var(--accent);
+}
+.why-step:not(:last-child) .dot::after{content:"";position:absolute}
+.why-arrow{margin-left:12px;color:var(--dim);font-size:13px;line-height:1}
+.why-step p{font-size:13.5px;color:var(--text)}
+.topic-card{cursor:pointer}
+.topic-card .ic{font-size:20px;margin-bottom:10px;display:block}
+.ref-item{padding:11px 0;border-bottom:1px solid var(--border);display:flex;gap:12px}
+.ref-item:last-child{border-bottom:none}
+.ref-item .tag{flex:none;font-size:9.5px;font-weight:750;letter-spacing:.6px;text-transform:uppercase;padding:3px 7px;border-radius:6px;height:fit-content}
+.tag.primary{background:color-mix(in srgb,var(--accent-2) 18%,transparent);color:var(--accent-2)}
+.tag.secondary{background:color-mix(in srgb,var(--violet) 18%,transparent);color:var(--violet)}
+.ref-item a{font-size:13px;font-weight:600;color:var(--accent)}
+.ref-item a:hover{text-decoration:underline}
+.ref-item .meta{font-size:11.5px;color:var(--muted)}
+.quiz-opt{
+  display:block;width:100%;text-align:left;padding:12px 15px;border-radius:12px;
+  border:1px solid var(--border);background:var(--panel);margin-bottom:9px;font-size:13.5px;transition:.18s;
+}
+.quiz-opt:hover{border-color:var(--accent);background:var(--panel-2)}
+.quiz-opt.correct{border-color:var(--accent-2);background:color-mix(in srgb,var(--accent-2) 15%,transparent)}
+.quiz-opt.wrong{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 15%,transparent)}
+.quiz-opt:disabled{cursor:default}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px}
+.kv dt{color:var(--muted);font-size:12.5px}
+.kv dd{font-weight:560}
+.flagbig{font-size:44px;line-height:1}
+.stat{display:flex;flex-direction:column;gap:3px;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--border)}
+.stat b{font-size:19px;font-weight:750;letter-spacing:-.5px}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+canvas.viz{width:100%;display:block;border-radius:14px;background:var(--bg-soft);border:1px solid var(--border)}
+.seg-ctrl{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.seg-ctrl button{padding:7px 13px;border-radius:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);background:var(--panel);transition:.18s}
+.seg-ctrl button.active{background:var(--grad);color:#04121f;border-color:transparent}
+[data-theme="light"] .seg-ctrl button.active{color:#fff}
+.search-result{display:flex;gap:13px;align-items:center;padding:13px;border-radius:13px;border:1px solid var(--border);background:var(--panel);cursor:pointer;transition:.18s}
+.search-result:hover{background:var(--panel-2);transform:translateX(3px)}
+.search-result .r-ic{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;background:var(--panel-2);font-size:17px}
+.empty{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:var(--r)}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(120%);z-index:100;
+  background:var(--panel-2);border:1px solid var(--border-2);backdrop-filter:blur(14px);
+  padding:11px 18px;border-radius:12px;font-size:13px;transition:transform .35s cubic-bezier(.2,.9,.2,1)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ============================== RESPONSIVE ============================== */
+@media(max-width:1080px){
+  .hero{grid-template-columns:1fr}
+  .hero-globe{min-height:330px;order:-1}
+  .hero-copy{padding:30px 26px 36px}
+}
+@media(max-width:900px){
+  .sidebar{display:none}
+  .content{margin-left:0;padding-bottom:78px}
+  main#view{padding:18px}
+  .topbar{padding:10px 16px}
+  .bottomnav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:50;
+    background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(18px);
+    border-top:1px solid var(--border);padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    justify-content:space-around;
+  }
+  .bottomnav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:var(--muted);font-weight:600;padding:5px 8px;border-radius:10px;flex:1}
+  .bottomnav button.active{color:var(--accent)}
+  .bottomnav button .ico{font-size:17px}
+  .globe-stage{height:58vh;min-height:380px}
+  .globe-info{position:static;width:auto;margin-top:10px}
+}
+@media(max-width:560px){
+  .topbar-actions .lbl{display:none}
+  .hero h2{letter-spacing:-1px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">🌍</div>
+      <div><h1>Terra</h1><span>Earth Explorer</span></div>
+    </div>
+    <nav id="sidenav"></nav>
+    <div class="sidebar-foot">
+      Prototype build · Educational content with cited sources. Figures are dated estimates.
+    </div>
+  </aside>
+
+  <div class="content">
+    <header class="topbar">
+      <label class="searchbox">
+        <span aria-hidden="true">🔍</span>
+        <input id="globalSearch" type="search" placeholder="Search countries, mountains, rivers, concepts…" aria-label="Global search" autocomplete="off"/>
+      </label>
+      <div class="topbar-actions">
+        <button class="iconbtn" id="themeToggle" title="Toggle light / dark mode" aria-label="Toggle theme">🌙</button>
+        <button class="iconbtn" data-nav="bookmarks" title="Bookmarks" aria-label="Bookmarks">🔖</button>
+      </div>
+    </header>
+    <main id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<nav class="bottomnav" id="bottomnav"></nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+"use strict";
+/* ==========================================================================
+   0. UTILITIES
+   ========================================================================== */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const nf = n => n == null ? "—" : n.toLocaleString("en-US");
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function maToLabel(ma){
+  if (ma >= 1000) return (ma/1000).toFixed(ma % 1000 === 0 ? 0 : 2) + " Ga";
+  return ma + " Ma";
+}
+function maToYears(ma){
+  if (ma >= 1000) return (ma/1000).toFixed(2) + " billion years ago";
+  if (ma >= 1) return ma + " million years ago";
+  return (ma*1000).toFixed(0) + ",000 years ago";
+}
+
+/* ==========================================================================
+   1. STATE  (persisted)
+   ========================================================================== */
+const store = {
+  key: "terra.geo.v1",
+  data: { theme:"dark", completed:{}, bookmarks:{}, recent:[], quizBest:0 },
+  load(){
+    try { const raw = localStorage.getItem(this.key); if (raw) Object.assign(this.data, JSON.parse(raw)); }
+    catch(e){ /* storage unavailable — run in memory */ }
+    return this.data;
+  },
+  save(){ try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch(e){} }
+};
+store.load();
+
+function markComplete(id, on = true){
+  if (on) store.data.completed[id] = true; else delete store.data.completed[id];
+  store.save();
+}
+function toggleBookmark(id){
+  if (store.data.bookmarks[id]) delete store.data.bookmarks[id];
+  else store.data.bookmarks[id] = true;
+  store.save();
+  return !!store.data.bookmarks[id];
+}
+function pushRecent(id){
+  const r = store.data.recent.filter(x => x !== id);
+  r.unshift(id); store.data.recent = r.slice(0, 12); store.save();
+}
+
+/* ==========================================================================
+   2. REFERENCES  (real organisations; links go to their official sections)
+   ========================================================================== */
+const REFS = {
+  usgsTectonics:{ t:"Plate Tectonics", o:"U.S. Geological Survey (USGS)", u:"https://www.usgs.gov/programs/earthquake-hazards/plate-tectonics", type:"primary" },
+  usgsEq:{ t:"Earthquake Hazards Program", o:"U.S. Geological Survey (USGS)", u:"https://www.usgs.gov/programs/earthquake-hazards", type:"primary" },
+  usgsVolcano:{ t:"Volcano Hazards Program", o:"U.S. Geological Survey (USGS)", u:"https://www.usgs.gov/programs/VHP", type:"primary" },
+  usgsWater:{ t:"Water Science School", o:"U.S. Geological Survey (USGS)", u:"https://www.usgs.gov/special-topics/water-science-school", type:"primary" },
+  usgsGeologicTime:{ t:"Geologic Time Scale", o:"U.S. Geological Survey (USGS)", u:"https://www.usgs.gov/educational-resources/geologic-time-scale", type:"primary" },
+  nasaEarth:{ t:"Earth Observatory", o:"NASA", u:"https://earthobservatory.nasa.gov/", type:"primary" },
+  nasaSolar:{ t:"Solar System Exploration", o:"NASA Science", u:"https://science.nasa.gov/solar-system/", type:"primary" },
+  nasaClimate:{ t:"Global Climate Change — Vital Signs", o:"NASA", u:"https://science.nasa.gov/climate-change/", type:"primary" },
+  noaaOcean:{ t:"Ocean & Coasts Resource Collections", o:"NOAA", u:"https://www.noaa.gov/education/resource-collections/ocean-coasts", type:"primary" },
+  noaaClimate:{ t:"Climate.gov", o:"NOAA", u:"https://www.climate.gov/", type:"primary" },
+  noaaEnso:{ t:"El Niño / Southern Oscillation (ENSO)", o:"NOAA Climate.gov", u:"https://www.climate.gov/enso", type:"primary" },
+  noaaHurricane:{ t:"National Hurricane Center", o:"NOAA / NWS", u:"https://www.nhc.noaa.gov/", type:"primary" },
+  smithsonian:{ t:"National Museum of Natural History", o:"Smithsonian Institution", u:"https://naturalhistory.si.edu/", type:"primary" },
+  siEruptions:{ t:"Global Volcanism Program", o:"Smithsonian Institution", u:"https://volcano.si.edu/", type:"primary" },
+  britannica:{ t:"Encyclopædia Britannica", o:"Encyclopædia Britannica, Inc.", u:"https://www.britannica.com/", type:"secondary" },
+  natgeo:{ t:"Resource Library — Geography", o:"National Geographic Society", u:"https://education.nationalgeographic.org/", type:"secondary" },
+  ipcc:{ t:"Assessment Reports", o:"Intergovernmental Panel on Climate Change (IPCC)", u:"https://www.ipcc.ch/", type:"primary" },
+  unPop:{ t:"World Population Prospects", o:"United Nations Population Division", u:"https://population.un.org/wpp/", type:"primary" },
+  worldBank:{ t:"World Bank Open Data", o:"World Bank", u:"https://data.worldbank.org/", type:"primary" },
+  usgsPlatesMap:{ t:"This Dynamic Earth: The Story of Plate Tectonics", o:"USGS (Kious & Tilling)", u:"https://pubs.usgs.gov/gip/dynamic/dynamic.html", type:"primary" },
+  noaaWater:{ t:"The Water Cycle", o:"NOAA / National Ocean Service", u:"https://www.noaa.gov/education/resource-collections/freshwater/water-cycle", type:"primary" }
+};
+
+/* ==========================================================================
+   3. CATEGORIES
+   ========================================================================== */
+const CATEGORIES = [
+  { id:"earth",    name:"Earth & Its Formation", icon:"🌍", color:"#4ea8ff", blurb:"From the Big Bang to a living planet — how Earth came to be and how it works." },
+  { id:"geology",  name:"Geology & Deep Time",   icon:"🪨", color:"#ff9f45", blurb:"Plate tectonics, drifting continents and 4.6 billion years of Earth history." },
+  { id:"physical", name:"Physical Geography",    icon:"🏔️", color:"#41e0b0", blurb:"Mountains, rivers, deserts, glaciers — the landforms sculpted by force and time." },
+  { id:"oceans",   name:"Oceans & Water",        icon:"🌊", color:"#38bdf8", blurb:"The blue planet: ocean basins, currents, tides and the water cycle." },
+  { id:"climate",  name:"Climate & Weather",     icon:"🌦️", color:"#a78bfa", blurb:"Atmosphere, climate zones, monsoons and planetary-scale oscillations." },
+  { id:"life",     name:"Life & Evolution",      icon:"🧬", color:"#f472b6", blurb:"How Earth's changing geography shaped the story of life." },
+  { id:"human",    name:"Human Geography",       icon:"👥", color:"#fbbf24", blurb:"People on the land: population, cities, migration and resources." },
+  { id:"political",name:"Political Geography",   icon:"🗺️", color:"#60a5fa", blurb:"Countries, borders, capitals and the map of the modern world." },
+  { id:"disasters",name:"Natural Disasters",     icon:"🌋", color:"#ff7a59", blurb:"Hazards, their mechanisms, warning signs and impacts on society." }
+];
+const catById = id => CATEGORIES.find(c => c.id === id) || { name:"Topic", icon:"📘", color:"#4ea8ff" };
+
+/* ==========================================================================
+   4. TOPICS
+   Each topic renders dynamically — add a new object and it appears everywhere.
+   ========================================================================== */
+const TOPICS = [
+/* ---------- EARTH & FORMATION ---------- */
+{
+  id:"formation-of-earth", cat:"earth", icon:"🌍", title:"Formation of Earth",
+  summary:"About 4.54 billion years ago, dust and rock orbiting the young Sun stuck together to build our planet.",
+  s:[
+    ["What is it?","Earth formed roughly 4.54 billion years ago (± about 50 million years) from the same cloud of gas and dust that produced the Sun. This process is called accretion."],
+    ["Why did it happen?","A collapsing molecular cloud spun into a flattened disc. Dust grains collided and stuck, forming planetesimals; the largest swept up material through gravity, growing into protoplanets."],
+    ["How did it work?","Impacts released enormous heat, and radioactive decay added more, so early Earth melted. Heavier elements (iron, nickel) sank to form the core while lighter silicates rose — a process called differentiation. The Moon likely formed shortly after, when a Mars-sized body struck Earth."],
+    ["What was early Earth like?","A molten, heavily bombarded world with no free oxygen, a steam-and-CO₂ atmosphere, and surface temperatures high enough to keep water vaporised. Once cooling began (after roughly 4.4–4.0 Ga), oceans condensed."]
+  ],
+  why:["Solar nebula collapses","Disc of gas and dust forms","Dust grains stick into planetesimals","Gravity builds a protoplanet","Impacts + radioactive decay melt Earth","Iron sinks → core; silicates → mantle","Cooling → crust, oceans, atmosphere"],
+  rel:["earths-layers","atmosphere","geological-time","earths-magnetic-field"],
+  refs:["nasaSolar","nasaEarth","britannica","smithsonian"]
+},
+{
+  id:"earths-layers", cat:"earth", icon:"🧅", title:"Earth's Internal Layers",
+  summary:"Core, mantle and crust — a layered planet sorted by density when it was molten.",
+  s:[
+    ["What is it?","Earth is layered: a solid inner core, a liquid outer core, a thick rocky mantle, and a thin crust. Above the rigid crust sits the lithosphere; below it lies the weak, slowly flowing asthenosphere."],
+    ["Why does it matter?","The liquid outer core generates Earth's magnetic field; convection in the mantle drives plate tectonics; the crust is the thin skin we live on."],
+    ["How do we know?","Seismic waves change speed and direction at layer boundaries, revealing the depths of the crust–mantle boundary (Mohorovičić discontinuity) and the core–mantle boundary."],
+    ["Key numbers","Crust: ~5–70 km thick. Mantle: down to ~2,890 km. Outer core: ~2,890–5,150 km (liquid iron–nickel). Inner core: ~5,150–6,371 km (solid, ~5,400 °C)."]
+  ],
+  why:["Early Earth melts","Dense iron and nickel sink","Lighter silicates float upward","Planet separates into shells","Heat from the core keeps the mantle convecting"],
+  rel:["formation-of-earth","earths-magnetic-field","plate-tectonics"],
+  refs:["usgsTectonics","britannica","nasaEarth"]
+},
+{
+  id:"atmosphere", cat:"earth", icon:"🌤️", title:"The Atmosphere",
+  summary:"A thin blanket of gas that makes Earth habitable — and drives all weather.",
+  s:[
+    ["What is it?","A layered envelope of gases held by gravity: troposphere (weather), stratosphere (ozone layer), mesosphere, thermosphere and exosphere."],
+    ["Composition","Dry air is about 78% nitrogen, 21% oxygen, 0.93% argon, and 0.04% carbon dioxide, plus variable water vapour."],
+    ["Why it changed","Early atmospheres were dominated by CO₂, water vapour and methane. Photosynthetic organisms released oxygen, transforming the atmosphere roughly 2.4 billion years ago (the Great Oxidation Event)."],
+    ["Why it matters","It regulates surface temperature through the greenhouse effect, shields us from most meteoroids and UV radiation, and circulates heat and moisture around the planet."]
+  ],
+  why:["Volcanic outgassing builds an early atmosphere","Water vapour condenses into oceans","Photosynthesis adds oxygen","Ozone layer forms in the stratosphere","Greenhouse gases keep the surface warm enough for liquid water"],
+  rel:["climate-zones","origin-of-life","formation-of-earth"],
+  refs:["nasaEarth","noaaClimate","britannica"]
+},
+{
+  id:"earths-magnetic-field", cat:"earth", icon:"🧲", title:"Earth's Magnetic Field",
+  summary:"A geodynamo in the liquid outer core creates a magnetic shield around the planet.",
+  s:[
+    ["What is it?","A magnetic field generated by churning, electrically conducting liquid iron in the outer core — the geodynamo. It extends into space as the magnetosphere."],
+    ["Why it matters","It deflects most of the solar wind, protecting the atmosphere and life from charged particles. It also makes compass navigation possible."],
+    ["Evidence in rocks","When lava cools, magnetic minerals lock in the field direction of that moment. These records show the field has reversed polarity many times, which helped confirm seafloor spreading."],
+    ["Uncertainty note","Reversal timing is irregular and difficult to predict; the field has weakened by a few percent over the last century, but this is within known natural variation."]
+  ],
+  why:["Liquid iron in the outer core convects","Rotation organises the flow","Moving charged metal generates a magnetic field","Field extends into space as the magnetosphere","Rocks record past field directions"],
+  rel:["earths-layers","plate-tectonics","atmosphere"],
+  refs:["nasaEarth","usgsTectonics","britannica"]
+},
+{
+  id:"rotation-revolution", cat:"earth", icon:"🌗", title:"Rotation, Revolution & Seasons",
+  summary:"Earth spins once a day and orbits the Sun once a year — on a tilted axis.",
+  s:[
+    ["Rotation","Earth turns once every ~23 h 56 m relative to the stars (24 h of solar day). This produces day and night and deflects winds and currents via the Coriolis effect."],
+    ["Revolution","Earth orbits the Sun once every ~365.25 days at an average distance of about 150 million km."],
+    ["Why seasons happen","Not distance from the Sun, but axial tilt (about 23.4°). The hemisphere tilted toward the Sun receives more direct sunlight and longer days."],
+    ["Solstices & equinoxes","Solstices mark the extremes of the tilt (~21 June and ~21 December); equinoxes occur when day and night are nearly equal everywhere (~20 March and ~22 September)."]
+  ],
+  why:["Earth's axis is tilted 23.4°","Earth orbits the Sun","The tilted hemisphere faces the Sun for part of the year","Sunlight arrives more directly and lasts longer","That hemisphere experiences summer"],
+  rel:["atmosphere","climate-zones","formation-of-earth"],
+  refs:["nasaEarth","britannica","natgeo"]
+},
+
+/* ---------- GEOLOGY & DEEP TIME ---------- */
+{
+  id:"plate-tectonics", cat:"geology", icon:"🪨", title:"Plate Tectonics", viz:"tectonics",
+  summary:"Earth's rigid outer shell is broken into plates that move, collide and separate — the master process of geology.",
+  s:[
+    ["What is it?","The lithosphere is divided into roughly a dozen major plates and many minor ones that slide over the weak asthenosphere at a few centimetres per year — about the speed your fingernails grow."],
+    ["Why does it happen?","Mantle convection, slab pull (dense subducting plates sinking) and ridge push all contribute. Slab pull is generally considered the dominant driver."],
+    ["Boundary types","Divergent: plates move apart, magma rises (mid-ocean ridges, East African Rift). Convergent: plates collide, one subducts (Andes, Japan) or both crumple (Himalayas). Transform: plates slide past each other (San Andreas Fault)."],
+    ["How it changed Earth","Plate motion has assembled and broken supercontinents, opened and closed oceans, built every major mountain range, and controls the global distribution of earthquakes and volcanoes."]
+  ],
+  why:["Heat from Earth's interior escapes","Mantle material slowly convects","Rigid plates are dragged and pushed","Plates interact at boundaries","Mountains, oceans, quakes and volcanoes result"],
+  rel:["continental-drift","earthquakes","volcanoes","mountains"],
+  refs:["usgsTectonics","usgsPlatesMap","britannica","siEruptions"]
+},
+{
+  id:"continental-drift", cat:"geology", icon:"🧩", title:"Continental Drift & Supercontinents",
+  summary:"Continents have wandered the globe, repeatedly gathering into giant landmasses and splitting apart.",
+  s:[
+    ["What is it?","Alfred Wegener proposed in 1912 that continents move. His evidence: matching coastlines, fossils, rock types and glacial deposits across oceans. The mechanism was unknown until plate tectonics."],
+    ["Supercontinents","Rodinia assembled roughly 1.1 Ga–750 Ma; Pangea formed around 320 Ma and began breaking up about 175 Ma, first into Gondwana (south) and Laurasia (north), then into today's continents."],
+    ["Evidence","Paleomagnetism, seafloor magnetic stripes, GPS measurements (continents move a few centimetres per year) and matching geological structures."],
+    ["The future","Africa is slowly colliding with Europe; the Red Sea is widening into a new ocean; models suggest a future supercontinent (sometimes called Amasia or Pangea Ultima) in a few hundred million years — a model-dependent prediction."]
+  ],
+  why:["Mantle convection moves plates","Continents ride on top of plates","Plates converge → continents assemble","Plates diverge → continents split","Oceans open and close between them"],
+  rel:["plate-tectonics","mountains","geological-time"],
+  refs:["usgsPlatesMap","usgsTectonics","britannica"]
+},
+{
+  id:"geological-time", cat:"geology", icon:"⏳", title:"The Geological Time Scale",
+  summary:"Geologists divide 4.6 billion years into eons, eras, periods and epochs.",
+  s:[
+    ["What is it?","A standardised framework for Earth history: eons → eras → periods → epochs. Boundaries are defined by major changes in the rock record, often using fossils or radiometric ages."],
+    ["The four eons","Hadean (4,600–4,000 Ma), Archean (4,000–2,500 Ma), Proterozoic (2,500–541 Ma) and Phanerozoic (541 Ma–present)."],
+    ["How we date rocks","Radiometric dating (e.g. uranium–lead, potassium–argon) measures decay of radioactive isotopes. Zircon crystals from Western Australia give ages up to ~4.4 Ga."],
+    ["Uncertainty","Dates before about 1 Ga carry larger uncertainties (often tens of millions of years), and Precambrian boundaries are defined by absolute ages rather than fossils."]
+  ],
+  why:["Radioactive isotopes decay at known rates","Minerals lock in parent and daughter atoms","Measuring ratios gives an age","Fossils order the younger rocks","Together they build the time scale"],
+  rel:["continental-drift","mass-extinctions","origin-of-life"],
+  refs:["usgsGeologicTime","britannica","smithsonian"]
+},
+{
+  id:"rock-cycle", cat:"geology", icon:"🔄", title:"The Rock Cycle",
+  summary:"Igneous, sedimentary and metamorphic rocks transform into each other over geological time.",
+  s:[
+    ["What is it?","A model describing how rock material is recycled by melting, cooling, weathering, deposition and heat/pressure."],
+    ["The three families","Igneous: solidified magma or lava. Sedimentary: compacted and cemented sediment. Metamorphic: pre-existing rock altered by heat and pressure without melting."],
+    ["Why it matters","The rock cycle recycles carbon and other elements, creates soil, stores groundwater, and hosts many mineral resources."],
+    ["Driven by","Earth's internal heat (tectonics, volcanism) and external energy from the Sun (weathering, erosion, transport, deposition)."]
+  ],
+  why:["Internal heat melts rock","Magma cools into igneous rock","Weathering breaks rock into sediment","Sediment compacts into sedimentary rock","Heat and pressure form metamorphic rock","The cycle repeats"],
+  rel:["plate-tectonics","mountains","rivers"],
+  refs:["usgsTectonics","britannica","natgeo"]
+},
+
+/* ---------- PHYSICAL GEOGRAPHY ---------- */
+{
+  id:"mountains", cat:"physical", icon:"🏔️", title:"Mountains & Mountain Building",
+  summary:"Mountains form where the crust is compressed, stretched or erupted — then are carved by ice and water.",
+  s:[
+    ["What is it?","A mountain is a landform that rises prominently above its surroundings, usually with steep slopes and a defined summit. Mountains cover roughly a quarter of the land surface and host about 1 in 10 people."],
+    ["Fold mountains","Formed when continental plates collide and sedimentary layers buckle. The Himalayas (Indian–Eurasian collision) and the Alps (African–Eurasian) are examples."],
+    ["Block & fault-block mountains","Crust is stretched and breaks along faults; blocks are uplifted or dropped. The Sierra Nevada and the East African Rift shoulders are examples."],
+    ["Volcanic mountains","Built by accumulated lava and ash — Mount Fuji, Mount Etna, the Andes' volcanic chain."],
+    ["Erosion","Glaciers carve U-shaped valleys and cirques; rivers cut gorges; frost shattering breaks rock. Mountains are therefore young, steep and constantly being destroyed."]
+  ],
+  why:["Two plates converge","Crust compresses and thickens","Rock layers fold and fault","The land surface is uplifted","Glaciers and rivers erode the rising rock","Sharp peaks and deep valleys appear"],
+  rel:["plate-tectonics","glaciers","volcanoes","rivers"],
+  refs:["usgsTectonics","britannica","natgeo"]
+},
+{
+  id:"rivers", cat:"physical", icon:"🏞️", title:"Rivers & River Landforms",
+  summary:"Rivers carve valleys, transport sediment and build floodplains and deltas.",
+  s:[
+    ["What is it?","A river is a natural channel of water flowing downhill under gravity, from a source in high ground to a mouth at a lake, sea or another river."],
+    ["Three zones","Upper course: steep, fast, erodes vertically (V-shaped valleys, waterfalls). Middle course: meanders and lateral erosion. Lower course: slow, depositional (floodplains, levees, deltas)."],
+    ["Key processes","Erosion (hydraulic action, abrasion, attrition, solution), transportation (traction, saltation, suspension, solution) and deposition when energy drops."],
+    ["Why it matters","Rivers supply fresh water and irrigation for billions of people, build fertile plains, and their deltas are among the most densely populated regions on Earth."]
+  ],
+  why:["Rain falls on high ground","Water flows downhill under gravity","Fast flow erodes and carries sediment","Slope decreases downstream","Sediment is deposited","Floodplains and deltas form"],
+  rel:["water-cycle","mountains","landforms-overview"],
+  refs:["usgsWater","britannica","natgeo"]
+},
+{
+  id:"deserts", cat:"physical", icon:"🏜️", title:"Deserts & Desertification",
+  summary:"Dry lands shaped by wind, where evaporation far exceeds rainfall.",
+  s:[
+    ["What is it?","A desert is a region receiving very little precipitation — commonly defined as under 250 mm per year. Deserts cover roughly a third of the land surface and are not always hot (Antarctica is the largest desert)."],
+    ["Why they form","Subtropical high-pressure belts push air downward, drying it (Sahara, Arabian, Australian deserts). Rain-shadow effects (Gobi, Patagonia) and continentality also create deserts."],
+    ["Wind processes","Deflation removes loose material; abrasion sands and polishes rock; dunes form where sand accumulates. Yardangs, ventifacts and mushroom rocks are typical."],
+    ["Desertification","Land degradation in dry regions, driven by drought, overgrazing, deforestation and unsustainable irrigation — a serious issue in the Sahel."]
+  ],
+  why:["Subtropical air sinks and warms","Warming air holds moisture, so rain is rare","Vegetation cover is sparse","Wind and flash floods erode the surface","Dunes, pediments and rocky hamada develop"],
+  rel:["climate-zones","rivers","landforms-overview"],
+  refs:["nasaEarth","britannica","natgeo"]
+},
+{
+  id:"glaciers", cat:"physical", icon:"🧊", title:"Glaciers & Ice Ages",
+  summary:"Slow-moving rivers of ice that sculpt mountains and have repeatedly reshaped whole continents.",
+  s:[
+    ["What is it?","A glacier is a mass of ice that forms where snow accumulation exceeds melting, and that flows under its own weight. About 10% of land is currently ice-covered."],
+    ["Erosion & deposition","Glaciers pluck and abrade rock, producing U-shaped valleys, cirques, arêtes, horns and fjords. They deposit till, moraines and erratics."],
+    ["Ice ages","Earth has had repeated glacial periods. The most recent Pleistocene glaciation peaked around 20,000 years ago, with ice sheets over North America and northern Europe; the current warm interval is the Holocene."],
+    ["Why ice ages happen","Milankovitch cycles (changes in Earth's orbit and axial tilt), greenhouse-gas concentrations, continental positions and ocean circulation all interact. The precise timing of future glaciations is model-dependent."]
+  ],
+  why:["Snow accumulates faster than it melts","Snow compacts into ice","Gravity makes the ice flow downhill","Rock is plucked and abraded","Valleys are widened into U-shapes","Moraines mark where ice retreated"],
+  rel:["mountains","climate-zones","geological-time"],
+  refs:["usgsWater","nasaEarth","britannica"]
+},
+{
+  id:"landforms-overview", cat:"physical", icon:"🗻", title:"Landforms: A Field Guide",
+  summary:"A quick tour of the shapes the Earth's surface takes, and what builds each one.",
+  s:[
+    ["What is a landform?","A natural feature of the solid surface with a characteristic shape — mountains, plateaus, plains, valleys, canyons, deltas, peninsulas, fjords, caves and more."],
+    ["Built by two engines","Internal processes (tectonics, uplift, volcanism) raise land; external processes (weathering, erosion, deposition) wear it down and build new features."],
+    ["Quick guide","Plateau — high, flat upland raised by uplift. Plain — broad, low, gently sloping surface. Delta — sediment deposited where a river meets standing water. Fjord — a drowned glacial valley. Peninsula — land surrounded by water on three sides. Isthmus — a narrow land bridge between two larger areas."],
+    ["Why it matters","Landforms determine where people can farm, build, travel and settle — and they shape local climate and ecosystems."]
+  ],
+  why:["Internal forces raise the crust","External forces attack the surface","Rock resists or yields depending on type","Erosion and deposition reshape the land","A recognisable landform emerges"],
+  rel:["mountains","rivers","deserts","glaciers"],
+  refs:["britannica","natgeo","usgsWater"]
+},
+
+/* ---------- OCEANS ---------- */
+{
+  id:"oceans", cat:"oceans", icon:"🌊", title:"Oceans & Ocean Basins",
+  summary:"One connected body of salt water covering 71% of Earth — and still mostly unexplored.",
+  s:[
+    ["What is it?","The global ocean is conventionally divided into Pacific, Atlantic, Indian, Southern and Arctic oceans. It holds about 97% of Earth's water and covers roughly 71% of the surface."],
+    ["Basin features","Continental shelf (shallow, biologically rich), continental slope, abyssal plain, mid-ocean ridge (where new crust forms) and deep trenches (subduction zones, e.g. the Mariana Trench, ~10,900 m)."],
+    ["Why it matters","Oceans absorb heat and carbon dioxide, drive global climate, produce a large share of the oxygen we breathe via phytoplankton, and support enormous biodiversity."],
+    ["Uncertainty","Large parts of the seafloor remain unmapped at high resolution; global bathymetric coverage is improving but still incomplete."]
+  ],
+  why:["Earth's surface cooled below 100 °C","Water vapour condensed","Rain filled the lowest basins","Plate tectonics opened and closed ocean basins","Oceans now circulate heat around the planet"],
+  rel:["ocean-currents","water-cycle","plate-tectonics","climate-zones"],
+  refs:["noaaOcean","nasaEarth","britannica"]
+},
+{
+  id:"water-cycle", cat:"oceans", icon:"💧", title:"The Water Cycle", viz:"watercycle",
+  summary:"Water endlessly circulates between ocean, atmosphere and land — powered by the Sun.",
+  s:[
+    ["What is it?","The continuous movement of water through evaporation, transpiration, condensation, precipitation, infiltration, runoff and storage."],
+    ["Why it happens","Solar energy evaporates water; gravity pulls it back down as rain, snow, and flowing rivers; plants release vapour through transpiration."],
+    ["Numbers (approximate)","About 97% of Earth's water is saline; roughly 2.5% is fresh, and most of that is locked in glaciers and ice caps. Less than 1% of fresh water is easily accessible surface water."],
+    ["Why it matters","The cycle distributes fresh water, regulates temperature, shapes landforms through erosion, and drives virtually all ecosystems."]
+  ],
+  why:["The Sun heats surface water","Liquid water becomes vapour","Vapour rises and cools","Cooling causes condensation into clouds","Water falls as precipitation","It runs off or infiltrates and returns to the ocean"],
+  rel:["oceans","rivers","climate-zones","glaciers"],
+  refs:["usgsWater","noaaWater","britannica"]
+},
+{
+  id:"ocean-currents", cat:"oceans", icon:"🌀", title:"Ocean Currents & Tides",
+  summary:"Great conveyor belts of water that move heat around the planet.",
+  s:[
+    ["What are currents?","Persistent, directed movements of seawater. Surface currents are driven mainly by wind and deflected by the Coriolis effect; deep currents are driven by differences in temperature and salinity (thermohaline circulation)."],
+    ["The global conveyor","The Atlantic Meridional Overturning Circulation (AMOC) carries warm surface water north and cold, dense water south at depth — a key regulator of European climate."],
+    ["Tides","Periodic rises and falls of sea level caused mainly by the gravitational pull of the Moon (and to a lesser extent the Sun). Most coasts experience two high and two low tides daily."],
+    ["Why it matters","Currents redistribute heat, influence weather, and transport nutrients and marine life; they have also shaped human trade routes for centuries."]
+  ],
+  why:["Winds push surface water","Earth's rotation deflects the flow","Temperature and salinity change water density","Dense water sinks and drives deep flow","Heat is redistributed around the globe"],
+  rel:["oceans","climate-zones","el-nino"],
+  refs:["noaaOcean","nasaEarth","britannica"]
+},
+
+/* ---------- CLIMATE ---------- */
+{
+  id:"climate-zones", cat:"climate", icon:"🌡️", title:"Climate Zones & Köppen Classification",
+  summary:"Why rainforests, deserts and tundra exist where they do.",
+  s:[
+    ["Weather vs climate","Weather is the state of the atmosphere over hours to days; climate is the long-term average and variability, typically measured over 30 years."],
+    ["Why zones exist","Uneven solar heating (strongest at the equator, weakest at the poles), atmospheric and oceanic circulation, altitude, distance from the sea and ocean currents together create distinct climate regions."],
+    ["Köppen system","The most widely used classification, using monthly temperature and precipitation: A (tropical), B (dry), C (temperate), D (continental), E (polar). Each is subdivided (e.g. Af, BWh, Cfb)."],
+    ["Why it matters","Climate determines vegetation, agriculture, water availability and where people can live."]
+  ],
+  why:["Sunlight strikes the equator more directly","Warm air rises and produces heavy rain","Air cools and sinks around 30° latitude","Sinking dry air creates deserts","Polar regions receive weak, oblique sunlight","Distinct climate belts emerge"],
+  rel:["atmosphere","deserts","monsoons","el-nino"],
+  refs:["noaaClimate","nasaClimate","ipcc","britannica"]
+},
+{
+  id:"monsoons", cat:"climate", icon:"🌧️", title:"Monsoons, Cyclones & Hurricanes",
+  summary:"Seasonal wind reversals and violent rotating storms.",
+  s:[
+    ["Monsoon","A seasonal reversal of wind direction. The Asian monsoon is driven by the different heating rates of land and ocean: summer land heats faster, low pressure draws moist ocean air inland, producing heavy rain."],
+    ["Tropical cyclones","Known as hurricanes in the Atlantic and northeast Pacific, typhoons in the northwest Pacific, and cyclones in the Indian Ocean. They form over warm ocean water (above about 26.5 °C), require Coriolis force, and are fuelled by evaporating water releasing latent heat."],
+    ["Structure","An eye of calm, a wall of intense convection around it, spiral rainbands, and a low-pressure centre. They weaken rapidly after landfall as the moisture supply is cut."],
+    ["Why it matters","Monsoons support agriculture for billions of people but can cause devastating floods; cyclones are among the costliest natural disasters."]
+  ],
+  why:["Land and sea heat at different rates","Pressure differences build","Air flows from high to low pressure","Moist ocean air rises and condenses","Heavy rainfall (monsoon) or a rotating storm (cyclone) develops"],
+  rel:["climate-zones","el-nino","hurricanes-disaster","floods"],
+  refs:["noaaHurricane","noaaClimate","britannica"]
+},
+{
+  id:"el-nino", cat:"climate", icon:"🌊", title:"El Niño & La Niña",
+  summary:"A periodic shift in Pacific Ocean temperatures that reshuffles weather worldwide.",
+  s:[
+    ["What is it?","The El Niño–Southern Oscillation (ENSO) is a coupled ocean–atmosphere cycle in the tropical Pacific. El Niño = unusually warm surface water in the eastern Pacific; La Niña = unusually cool."],
+    ["Why it happens","Trade winds normally push warm water west. When they weaken, warm water surges east, shifting rainfall patterns and altering the jet streams."],
+    ["Global effects","El Niño is often linked to drought in Indonesia and Australia, wetter conditions in Peru and parts of the southern US; La Niña tends to produce the opposite pattern. Effects vary by region and season."],
+    ["Uncertainty","ENSO is monitored closely but individual impacts are probabilistic, not guaranteed — forecasters express them as likelihoods."]
+  ],
+  why:["Trade winds weaken","Warm surface water shifts eastward","Atmospheric convection moves with it","Jet streams are displaced","Rainfall and temperature patterns change worldwide"],
+  rel:["ocean-currents","climate-zones","monsoons"],
+  refs:["noaaEnso","noaaClimate","nasaEarth"]
+},
+
+/* ---------- LIFE ---------- */
+{
+  id:"origin-of-life", cat:"life", icon:"🧬", title:"Origin of Life & the Great Oxidation",
+  summary:"Life appeared early, then transformed the atmosphere.",
+  s:[
+    ["Earliest evidence","Chemical signatures in rocks from Greenland and Canada suggest life may have existed by around 3.7–3.5 Ga. The oldest widely accepted fossils (stromatolites) date to about 3.5 Ga."],
+    ["How it may have started","Leading hypotheses involve organic molecules forming near hydrothermal vents or in shallow pools, then self-replicating RNA. This remains an active research area and no single hypothesis is settled."],
+    ["Great Oxidation Event","Cyanobacteria evolved oxygenic photosynthesis; free oxygen began accumulating in the atmosphere around 2.4 Ga, transforming Earth's chemistry and making complex life possible."],
+    ["Geography link","The rise of oxygen also weathered rocks differently, changed ocean chemistry, and helped trigger some of Earth's earliest global glaciations."]
+  ],
+  why:["Simple organic molecules form","Self-replicating systems emerge","Photosynthesis evolves in cyanobacteria","Oxygen accumulates in the atmosphere","Ocean and rock chemistry change","Complex life becomes possible"],
+  rel:["atmosphere","mass-extinctions","geological-time"],
+  refs:["smithsonian","nasaEarth","britannica"]
+},
+{
+  id:"mass-extinctions", cat:"life", icon:"☄️", title:"Mass Extinctions",
+  summary:"Five (or more) events wiped out a large share of species — geography and climate were usually the cause.",
+  s:[
+    ["What is it?","A mass extinction is a geologically rapid loss of a large proportion of species. The 'Big Five' occurred at the ends of the Ordovician, Devonian, Permian, Triassic and Cretaceous."],
+    ["The Permian–Triassic (about 252 Ma)","The largest known extinction, killing roughly 80% of marine species. Most evidence points to Siberian Traps volcanism causing rapid warming, ocean acidification and anoxia."],
+    ["The K–Pg extinction (about 66 Ma)","Ended the non-avian dinosaurs. Strongly linked to the Chicxulub impact in present-day Mexico, combined with Deccan Traps volcanism."],
+    ["Why geography matters","Continental positions, sea level, ocean circulation and volcanic provinces all influence how vulnerable ecosystems are to change."]
+  ],
+  why:["A massive environmental perturbation occurs","Habitats collapse or shift rapidly","Food chains break down","Many species cannot adapt fast enough","Ecosystems restructure, and new groups diversify"],
+  rel:["geological-time","continental-drift","origin-of-life"],
+  refs:["smithsonian","britannica","nasaEarth"]
+},
+
+/* ---------- HUMAN ---------- */
+{
+  id:"population", cat:"human", icon:"👥", title:"Population & Density",
+  summary:"Where people live — and why the pattern is so uneven.",
+  s:[
+    ["What is it?","Population geography studies the size, distribution, density and composition of human populations. World population passed 8 billion in November 2022 (UN estimate)."],
+    ["Density","Arithmetic density = people ÷ area. But most of humanity clusters on a small fraction of the land: fertile river plains, coastal regions and temperate zones."],
+    ["What attracts settlement","Fresh water, fertile soil, mild climate, flat terrain, natural resources, and access to trade routes and coasts."],
+    ["What repels it","Extreme cold or heat, aridity, steep slopes, dense forest, poor soils, and hazard-prone areas."]
+  ],
+  why:["Geography offers or denies resources","People concentrate where farming and trade are possible","Cities grow into population centres","Migration redistributes people","Density patterns emerge"],
+  rel:["urbanisation","climate-zones","borders"],
+  refs:["unPop","worldBank","britannica"]
+},
+{
+  id:"urbanisation", cat:"human", icon:"🏙️", title:"Urbanisation & Cities",
+  summary:"For the first time in history, most people live in cities.",
+  s:[
+    ["What is it?","The increasing share of a population living in urban areas. According to UN estimates, more than half the world's population now lives in cities, and the share continues to rise."],
+    ["Why it happens","Rural push factors (limited land, low wages, drought) and urban pull factors (jobs, education, healthcare, services) drive migration to cities."],
+    ["Why location matters","Most large cities sit on coasts, rivers or fertile plains because trade and water historically determined where settlements could thrive."],
+    ["Challenges","Housing shortages, congestion, air pollution, heat-island effects, flood risk and pressure on water supply."]
+  ],
+  why:["Cities offer jobs and services","People migrate from rural areas","Urban population grows","Cities expand outward and upward","Land use, water demand and climate impacts change"],
+  rel:["population","borders","climate-zones"],
+  refs:["unPop","worldBank","natgeo"]
+},
+
+/* ---------- POLITICAL ---------- */
+{
+  id:"borders", cat:"political", icon:"🗺️", title:"Borders & Political Geography",
+  summary:"How humans divided the planet — and why natural and political boundaries differ.",
+  s:[
+    ["What is it?","Political geography studies the spatial organisation of power: states, territories, borders, capitals and international organisations."],
+    ["Types of borders","Natural (following rivers, mountain crests, coastlines) and artificial (straight lines drawn by treaty, often along lines of latitude or longitude, such as much of the US–Canada border)."],
+    ["Why borders change","Treaties, decolonisation, conflict, secession, and the gradual movement of rivers or coastlines. Many modern borders reflect 19th- and 20th-century political decisions rather than geography."],
+    ["Key distinction","Political boundaries are human conventions; geological and physical boundaries (watersheds, plate margins, biomes) follow natural processes. This application keeps the two clearly separated in its map layers."]
+  ],
+  why:["Human groups occupy territory","Sovereignty is claimed and negotiated","Boundaries are drawn by treaty or conflict","Rivers shift and coastlines change","Borders are periodically renegotiated"],
+  rel:["population","urbanisation","mountains"],
+  refs:["britannica","natgeo","worldBank"]
+},
+
+/* ---------- DISASTERS ---------- */
+{
+  id:"earthquakes", cat:"disasters", icon:"🌐", title:"Earthquakes",
+  summary:"Sudden releases of stored elastic energy in the crust.",
+  s:[
+    ["What is it?","An earthquake is ground shaking caused by the sudden release of energy, usually when rock along a fault breaks or slips. Energy radiates as seismic waves."],
+    ["Why it happens","Tectonic stress builds up as plates move. When friction is overcome, the rock ruptures. Most earthquakes occur along plate boundaries, but intraplate quakes also occur."],
+    ["Measuring","Magnitude measures energy released (moment magnitude scale, logarithmic). Intensity measures shaking effects at a location (Modified Mercalli scale)."],
+    ["Where","About 80% of large earthquakes occur around the Pacific 'Ring of Fire'. The Himalayas, the Mediterranean–Alpine belt and mid-ocean ridges are also highly active."],
+    ["Why it matters","Earthquakes cause ground shaking, liquefaction, landslides, fires and — when offshore — tsunamis. Building codes and early-warning systems save lives."]
+  ],
+  why:["Plates move and stress builds","Rock stores elastic strain","Friction fails along a fault","Energy is released as seismic waves","The ground shakes","Surface features and human structures change"],
+  rel:["plate-tectonics","tsunamis","volcanoes"],
+  refs:["usgsEq","usgsTectonics","britannica"]
+},
+{
+  id:"volcanoes", cat:"disasters", icon:"🌋", title:"Volcanoes",
+  summary:"Where molten rock from the interior reaches the surface.",
+  s:[
+    ["What is it?","A volcano is a vent or opening in the crust through which magma, ash and gases escape. Most volcanoes sit near plate boundaries or over mantle hotspots."],
+    ["Why they happen","At divergent boundaries magma rises to fill gaps. At subduction zones, water released from the descending slab lowers the melting point of the mantle, generating magma. At hotspots, a mantle plume melts through the plate (Hawai'i, Iceland, Yellowstone)."],
+    ["Types","Shield volcanoes (runny lava, gentle slopes), stratovolcanoes (viscous lava, explosive, steep), cinder cones, and calderas formed by collapse."],
+    ["Hazards & benefits","Lava flows, pyroclastic flows, ash fall, lahars and gas emissions. Benefits include fertile volcanic soils, geothermal energy and mineral deposits."]
+  ],
+  why:["Heat melts rock in the mantle or crust","Magma is less dense than surrounding rock","It rises through fractures","Pressure builds in a magma chamber","An eruption releases lava, ash and gas","New land and soils form"],
+  rel:["plate-tectonics","earthquakes","mountains"],
+  refs:["usgsVolcano","siEruptions","britannica"]
+},
+{
+  id:"tsunamis", cat:"disasters", icon:"🌊", title:"Tsunamis",
+  summary:"Ocean waves generated by sudden displacement of the seafloor.",
+  s:[
+    ["What is it?","A tsunami is a series of long-wavelength waves caused by the sudden displacement of a large volume of water — usually by a submarine earthquake, landslide, or volcanic eruption."],
+    ["Why it happens","In a megathrust earthquake the seafloor is thrust upward or dropped, lifting or lowering the entire water column above it. In the deep ocean the wave is low but travels at jet-aircraft speeds (up to ~800 km/h)."],
+    ["Near shore","As the wave enters shallow water it slows, compresses and rises into a wall of water. The first wave is often not the largest."],
+    ["Warning signs & response","Strong or long shaking near the coast, or the sea suddenly withdrawing, are natural warnings. Official tsunami warning centres issue alerts; the correct action is to move inland and to higher ground immediately."]
+  ],
+  why:["A submarine earthquake displaces the seafloor","The entire water column is lifted","Long waves radiate across the ocean","Waves slow and steepen near the coast","Coastal areas are inundated"],
+  rel:["earthquakes","plate-tectonics","oceans"],
+  refs:["noaaOcean","usgsEq","britannica"]
+},
+{
+  id:"floods", cat:"disasters", icon:"🌧️", title:"Floods & Droughts",
+  summary:"Too much water, or too little — the two extremes of the hydrological cycle.",
+  s:[
+    ["Floods","An overflow of water onto normally dry land. Causes include heavy rainfall, snowmelt, storm surges, dam failure and deforestation that reduces infiltration."],
+    ["Droughts","A prolonged deficiency of precipitation relative to the expected norm. Droughts develop slowly, which makes them 'creeping' hazards that affect agriculture, water supply and energy."],
+    ["Why geography matters","Flood risk depends on topography, soil, vegetation cover, drainage and land use. Drought risk depends on climate, water storage and demand."],
+    ["Managing risk","Flood defences, land-use planning, early warning, drought-resistant crops and water conservation all reduce impacts."]
+  ],
+  why:["Precipitation exceeds (or falls far below) normal","Rivers or reservoirs exceed capacity","Water spreads across the land (flood) or stores run dry (drought)","Soils, crops and settlements are affected","Landscapes and economies adjust"],
+  rel:["rivers","monsoons","climate-zones"],
+  refs:["noaaClimate","usgsWater","ipcc"]
+},
+{
+  id:"hurricanes-disaster", cat:"disasters", icon:"🌀", title:"Hurricanes, Cyclones & Tornadoes",
+  summary:"The most violent storms in the atmosphere.",
+  s:[
+    ["Tropical cyclones","Rotating storm systems over warm tropical oceans with sustained winds of at least 119 km/h (74 mph). They are called hurricanes, typhoons or cyclones depending on the region."],
+    ["Tornadoes","Violently rotating columns of air extending from a thunderstorm to the ground. They are smaller and shorter-lived than tropical cyclones but can have the highest local wind speeds on Earth."],
+    ["Where","Tropical cyclones form over warm ocean water between roughly 5° and 20° latitude, where the Coriolis effect is strong enough to spin the system. Tornadoes are most frequent in the central United States ('Tornado Alley') and in parts of South Asia and Europe."],
+    ["Impacts","Storm surge, wind damage, heavy rainfall and flooding. Coastal flooding from storm surge is historically the deadliest hazard."]
+  ],
+  why:["Warm ocean water evaporates rapidly","Rising moist air releases latent heat","Pressure falls and winds spiral inward","The storm intensifies and moves with steering winds","Landfall cuts off moisture and the storm weakens"],
+  rel:["monsoons","el-nino","floods"],
+  refs:["noaaHurricane","noaaClimate","britannica"]
+}
+];
+const topicById = id => TOPICS.find(t => t.id === id);
+
+/* ==========================================================================
+   5. GEOLOGICAL TIMELINE
+   ========================================================================== */
+const TIMELINE = [
+  { id:"hadean", name:"Hadean", from:4600, to:4000, color:"#8b3a2f", eon:"Precambrian",
+    events:"Earth accretes; the Moon-forming impact; heavy bombardment; first crust forms.",
+    climate:"Extremely hot. Surface molten or near-molten; a steam and CO₂ atmosphere; no free oxygen.",
+    continents:"No stable continents. Possibly short-lived protocrust repeatedly destroyed by impacts.",
+    oceans:"Water vapour condenses as the surface cools; the earliest oceans may date to about 4.4–4.0 Ga.",
+    life:"No evidence of life.",
+    note:"All dates in this interval carry large uncertainties (tens of millions of years)." },
+  { id:"archean", name:"Archean", from:4000, to:2500, color:"#b5533a", eon:"Precambrian",
+    events:"First stable continental crust; major volcanic activity; oldest surviving rocks and zircons.",
+    climate:"Warm, with a CO₂- and methane-rich atmosphere. Likely intermittent 'icehouse' episodes.",
+    continents:"Small proto-continents ('cratons') begin to assemble and drift.",
+    oceans:"Global ocean covers most of the surface; composition very different from today (anoxic, iron-rich).",
+    life:"Earliest evidence of life — stromatolites and chemical biosignatures, roughly 3.5–3.7 Ga." },
+  { id:"proterozoic", name:"Proterozoic", from:2500, to:541, color:"#c96a3f", eon:"Precambrian",
+    events:"Great Oxidation Event (~2.4 Ga); assembly and breakup of Rodinia; 'Snowball Earth' glaciations (~720–635 Ma).",
+    climate:"Highly variable: greenhouse warmth interrupted by severe global glaciations.",
+    continents:"Rodinia forms around 1.1 Ga and breaks up by about 750 Ma.",
+    oceans:"Oxygenation of surface waters; deep ocean remains largely anoxic for a long time.",
+    life:"Eukaryotes appear; multicellular life emerges in the Ediacaran (~600 Ma)." },
+  { id:"paleozoic", name:"Paleozoic", from:541, to:252, color:"#3f9e7a", eon:"Phanerozoic",
+    events:"Cambrian explosion; Pangea assembles; great coal forests; end-Permian mass extinction.",
+    climate:"Mostly warm with major glaciations in the late Ordovician and Carboniferous–Permian.",
+    continents:"Gondwana in the south, then collision with Laurasia to form Pangea by about 320 Ma.",
+    oceans:"Panthalassa surrounds Pangea; the Tethys Ocean opens to the east.",
+    life:"Explosive diversification of animals, first land plants, amphibians, reptiles, and the largest extinction in Earth history at the end." },
+  { id:"mesozoic", name:"Mesozoic", from:252, to:66, color:"#4a9ecf", eon:"Phanerozoic",
+    events:"Pangea rifts apart; Atlantic Ocean opens; high sea levels; end-Cretaceous impact.",
+    climate:"Predominantly warm greenhouse world; no polar ice for much of the era.",
+    continents:"Breakup of Pangea → Laurasia and Gondwana → today's continents drift apart.",
+    oceans:"New ocean basins open along rift systems; shallow seas flood continental interiors.",
+    life:"Age of dinosaurs, first mammals and birds, rise of flowering plants; ends with the K–Pg extinction (~66 Ma)." },
+  { id:"cenozoic", name:"Cenozoic", from:66, to:0, color:"#f0b429", eon:"Phanerozoic",
+    events:"Alpine and Himalayan orogenies; Pleistocene ice ages; human evolution and migration.",
+    climate:"Long-term cooling from greenhouse to icehouse, with repeated glacial–interglacial cycles in the Quaternary.",
+    continents:"Continents approach their present positions; India collides with Asia; Africa meets Europe.",
+    oceans:"Modern ocean circulation, including the thermohaline conveyor, becomes established.",
+    life:"Mammals diversify; grasslands spread; hominins appear in Africa and disperse worldwide." }
+];
+
+const PERIODS = [
+  { name:"Cambrian", from:541, to:485, era:"Paleozoic", color:"#4fae86", note:"Cambrian explosion — most major animal groups appear in the fossil record." },
+  { name:"Ordovician", from:485, to:444, era:"Paleozoic", color:"#3f9e7a", note:"Diverse marine life; ends with a major glaciation and mass extinction." },
+  { name:"Silurian", from:444, to:419, era:"Paleozoic", color:"#35906f", note:"First land plants; reefs recover." },
+  { name:"Devonian", from:419, to:359, era:"Paleozoic", color:"#2d8163", note:"'Age of Fishes'; first forests and amphibians; late Devonian extinction." },
+  { name:"Carboniferous", from:359, to:299, era:"Paleozoic", color:"#257057", note:"Vast coal-forming forests; high oxygen; first reptiles." },
+  { name:"Permian", from:299, to:252, era:"Paleozoic", color:"#1d5f4a", note:"Pangea complete; ends with the largest mass extinction known." },
+  { name:"Triassic", from:252, to:201, era:"Mesozoic", color:"#5aa8d0", note:"Recovery after the end-Permian crisis; first dinosaurs and mammals." },
+  { name:"Jurassic", from:201, to:145, era:"Mesozoic", color:"#4a9ecf", note:"Pangea breaks up; dinosaurs dominate; first birds." },
+  { name:"Cretaceous", from:145, to:66, era:"Mesozoic", color:"#3a8dbd", note:"Flowering plants spread; ends with the K–Pg impact and extinction." },
+  { name:"Paleogene", from:66, to:23, era:"Cenozoic", color:"#e8a72b", note:"Mammals radiate; Himalayas begin to rise." },
+  { name:"Neogene", from:23, to:2.6, era:"Cenozoic", color:"#f0b429", note:"Grasslands expand; hominins appear in Africa." },
+  { name:"Quaternary", from:2.6, to:0, era:"Cenozoic", color:"#ffd166", note:"Repeated ice ages; Homo sapiens evolves and spreads worldwide." }
+];
+
+/* ==========================================================================
+   6. COUNTRIES
+   ========================================================================== */
+const COUNTRIES = [
+ { n:"India", f:"🇮🇳", cap:"New Delhi", cont:"Asia", reg:"South Asia", area:3287263, pop:1440000000, popYear:2024,
+   cur:"Indian rupee (₹)", lang:"Hindi and English (official); 22 scheduled languages", lat:22, lon:79, code:"+91", tld:".in",
+   geo:"Dominates the Indian subcontinent, bounded by the Himalayas in the north, the Arabian Sea west and the Bay of Bengal east. Major rivers: Ganga, Brahmaputra, Godavari, Indus (upper). Thar Desert in the northwest.",
+   hist:"Modern territory took shape through British colonial consolidation and the 1947 partition. India's northern boundary is defined by the ongoing collision of the Indian and Eurasian plates, which continues to raise the Himalayas.",
+   env:"Megadiverse; monsoon-dependent agriculture; cyclones on both coasts; heatwaves, groundwater depletion and Himalayan glacier retreat are key risks." },
+ { n:"China", f:"🇨🇳", cap:"Beijing", cont:"Asia", reg:"East Asia", area:9596961, pop:1410000000, popYear:2024,
+   cur:"Renminbi / yuan (¥)", lang:"Mandarin Chinese (official); many regional languages", lat:35, lon:105, code:"+86", tld:".cn",
+   geo:"Spans the Tibetan Plateau (the 'Roof of the World'), the Gobi and Taklamakan deserts, the fertile eastern plains and a long Pacific coastline. Major rivers: Yangtze, Yellow (Huang He), Mekong (upper).",
+   hist:"One of the world's oldest continuous civilisations. The Tibetan Plateau, formed by the India–Eurasia collision, profoundly influences the Asian monsoon.",
+   env:"Desertification in the north, air quality challenges, major flood and earthquake risk, and rapid urbanisation." },
+ { n:"Japan", f:"🇯🇵", cap:"Tokyo", cont:"Asia", reg:"East Asia", area:377975, pop:124000000, popYear:2024,
+   cur:"Japanese yen (¥)", lang:"Japanese", lat:36, lon:138, code:"+81", tld:".jp",
+   geo:"An archipelago of about 14,000 islands along the Pacific Ring of Fire. About 75% mountainous; Mount Fuji (3,776 m) is the highest peak.",
+   hist:"Located at the junction of four plates, Japan experiences frequent earthquakes and volcanic activity; the 2011 Tōhoku earthquake and tsunami was among the most powerful recorded.",
+   env:"Highly seismic and volcanic; typhoon-prone; limited arable land and heavy reliance on imported resources." },
+ { n:"Indonesia", f:"🇮🇩", cap:"Jakarta", cont:"Asia", reg:"Southeast Asia", area:1904569, pop:281000000, popYear:2024,
+   cur:"Indonesian rupiah (Rp)", lang:"Indonesian (official); over 700 local languages", lat:-2, lon:118, code:"+62", tld:".id",
+   geo:"The world's largest archipelago — over 17,000 islands spanning the Equator, with volcanoes, tropical rainforests and coral reefs.",
+   hist:"Formed along the collision zone of the Indo-Australian, Eurasian and Pacific plates; the 1883 Krakatoa eruption and the 2004 Indian Ocean tsunami were defining events.",
+   env:"Extremely high seismic and volcanic risk; deforestation; peatland fires; sea-level rise threatens low-lying coastal cities." },
+ { n:"Pakistan", f:"🇵🇰", cap:"Islamabad", cont:"Asia", reg:"South Asia", area:881913, pop:241000000, popYear:2024,
+   cur:"Pakistani rupee (₨)", lang:"Urdu and English (official); Punjabi, Sindhi, Pashto and others", lat:30, lon:70, code:"+92", tld:".pk",
+   geo:"Ranges from the Arabian Sea coast to the Karakoram and Hindu Kush, including K2 (8,611 m) — the world's second-highest peak — and the fertile Indus plain.",
+   hist:"Created in 1947; its geography is dominated by the Indus river system, which supports most agriculture and population.",
+   env:"Highly vulnerable to glacial lake outburst floods, earthquakes, and monsoon flooding; water stress is a major concern." },
+ { n:"Russia", f:"🇷🇺", cap:"Moscow", cont:"Europe / Asia", reg:"Northern Eurasia", area:17098246, pop:144000000, popYear:2024,
+   cur:"Russian ruble (₽)", lang:"Russian (official); many regional languages", lat:61, lon:100, code:"+7", tld:".ru",
+   geo:"The largest country by area, spanning 11 time zones from the Baltic to the Pacific. Dominated by the West Siberian Plain, the Central Siberian Plateau, the Ural Mountains and vast forests and tundra.",
+   hist:"Expanded across northern Eurasia over several centuries; its territory includes Lake Baikal, the world's deepest and oldest freshwater lake.",
+   env:"Permafrost thaw, large-scale wildfires, Arctic warming at above-global-average rates, and industrial pollution legacies." },
+ { n:"Turkey", f:"🇹🇷", cap:"Ankara", cont:"Asia / Europe", reg:"Anatolia & Thrace", area:783562, pop:85000000, popYear:2024,
+   cur:"Turkish lira (₺)", lang:"Turkish", lat:39, lon:35, code:"+90", tld:".tr",
+   geo:"A bridge between Europe and Asia, with the Bosphorus strait dividing the two. Plateaus, the Pontic and Taurus mountains, and the Anatolian fault system dominate.",
+   hist:"The North Anatolian and East Anatolian faults make Turkey one of the most seismically active countries in the world.",
+   env:"High earthquake risk, drought and water management issues, and coastal erosion." },
+ { n:"Saudi Arabia", f:"🇸🇦", cap:"Riyadh", cont:"Asia", reg:"Middle East", area:2149690, pop:33000000, popYear:2024,
+   cur:"Saudi riyal (﷼)", lang:"Arabic", lat:24, lon:45, code:"+966", tld:".sa",
+   geo:"Covers most of the Arabian Peninsula: the Rub' al Khali ('Empty Quarter') desert, the Red Sea and Persian Gulf coasts, and the Asir mountains in the southwest.",
+   hist:"Its territory is largely defined by desert geography and 20th-century boundary agreements; oil reserves transformed its economy and cities.",
+   env:"Extreme aridity, very high summer temperatures, dust storms, and heavy dependence on desalination for water." },
+ { n:"Iran", f:"🇮🇷", cap:"Tehran", cont:"Asia", reg:"Middle East", area:1648195, pop:89000000, popYear:2024,
+   cur:"Iranian rial (﷼)", lang:"Persian (Farsi)", lat:32, lon:53, code:"+98", tld:".ir",
+   geo:"A high plateau ringed by the Zagros and Alborz mountains, with deserts (Dasht-e Kavir, Dasht-e Lut) in the interior and a Caspian Sea coast in the north.",
+   hist:"Situated on the Alpine–Himalayan seismic belt; the country experiences frequent earthquakes.",
+   env:"Water scarcity, desertification, dust storms, and high seismic risk." },
+ { n:"Egypt", f:"🇪🇬", cap:"Cairo", cont:"Africa", reg:"North Africa", area:1001449, pop:114000000, popYear:2024,
+   cur:"Egyptian pound (£E)", lang:"Arabic", lat:27, lon:30, code:"+20", tld:".eg",
+   geo:"The Nile valley and delta support almost the entire population, while deserts cover about 96% of the territory. The Suez Canal links the Mediterranean and Red Seas.",
+   hist:"One of the world's earliest civilisations grew along the Nile, whose predictable annual floods made agriculture possible for millennia.",
+   env:"Water scarcity, coastal erosion and salinisation in the Nile Delta, and sea-level rise risk for low-lying areas." },
+ { n:"Nigeria", f:"🇳🇬", cap:"Abuja", cont:"Africa", reg:"West Africa", area:923768, pop:229000000, popYear:2024,
+   cur:"Nigerian naira (₦)", lang:"English (official); Hausa, Yoruba, Igbo and 500+ others", lat:9, lon:8, code:"+234", tld:".ng",
+   geo:"Ranges from humid mangrove deltas in the south to the Sahel in the north; the Niger River and its delta dominate the south.",
+   hist:"Africa's most populous country; its geography spans tropical rainforest, savanna and semi-arid zones.",
+   env:"Coastal erosion and flooding in the Niger Delta, desertification in the north, and oil pollution in the delta region." },
+ { n:"Kenya", f:"🇰🇪", cap:"Nairobi", cont:"Africa", reg:"East Africa", area:580367, pop:56000000, popYear:2024,
+   cur:"Kenyan shilling (KSh)", lang:"Swahili and English (official)", lat:1, lon:38, code:"+254", tld:".ke",
+   geo:"Straddles the Equator, with the Great Rift Valley cutting through it, Mount Kenya (5,199 m) in the centre, and a coastline on the Indian Ocean.",
+   hist:"The East African Rift is actively splitting the African plate — a rare place to observe continental break-up in progress.",
+   env:"Drought cycles in the north, wildlife habitat pressure, and flood risk in low-lying areas." },
+ { n:"Ethiopia", f:"🇪🇹", cap:"Addis Ababa", cont:"Africa", reg:"East Africa (Horn)", area:1104300, pop:132000000, popYear:2024,
+   cur:"Ethiopian birr (Br)", lang:"Amharic (working language); Oromo, Tigrinya, Somali and others", lat:9, lon:40, code:"+251", tld:".et",
+   geo:"A high plateau split by the Great Rift Valley, with the Danakil Depression — one of the hottest and lowest places on Earth.",
+   hist:"The Ethiopian Highlands are a classic example of plateau volcanism; the Blue Nile rises from Lake Tana.",
+   env:"Recurrent drought and food insecurity, soil erosion on steep highlands, and rapid population growth." },
+ { n:"South Africa", f:"🇿🇦", cap:"Pretoria, Cape Town, Bloemfontein", cont:"Africa", reg:"Southern Africa", area:1219090, pop:61000000, popYear:2024,
+   cur:"South African rand (R)", lang:"12 official languages including Zulu, Xhosa, Afrikaans and English", lat:-29, lon:24, code:"+27", tld:".za",
+   geo:"Plateaus, the Drakensberg escarpment, the Karoo semi-desert, and two coastlines on the Atlantic and Indian Oceans. Cape Point marks a major ocean boundary.",
+   hist:"Its varied geology includes some of the world's oldest rocks and richest mineral deposits, including gold and platinum.",
+   env:"Water scarcity in the interior, drought, coastal erosion, and biodiversity loss in the Cape Floral Region." },
+ { n:"United States", f:"🇺🇸", cap:"Washington, D.C.", cont:"North America", reg:"Northern America", area:9833517, pop:340000000, popYear:2024,
+   cur:"United States dollar ($)", lang:"English (de facto); Spanish widely spoken", lat:39, lon:-98, code:"+1", tld:".us",
+   geo:"From the Pacific coast and Rocky Mountains to the Great Plains, Mississippi basin, Appalachians and Atlantic coast, plus Alaska and Hawai'i.",
+   hist:"The 49th parallel forms much of the northern border; the Rocky Mountains and Mississippi drainage shaped westward expansion and settlement.",
+   env:"Hurricanes on the Gulf and Atlantic coasts, tornadoes in the central plains, wildfires and drought in the West, and earthquake risk along the San Andreas Fault." },
+ { n:"Canada", f:"🇨🇦", cap:"Ottawa", cont:"North America", reg:"Northern America", area:9984670, pop:41000000, popYear:2024,
+   cur:"Canadian dollar ($)", lang:"English and French (official)", lat:60, lon:-100, code:"+1", tld:".ca",
+   geo:"The second-largest country by area: the Canadian Shield, Rocky Mountains, Hudson Bay lowlands, Great Lakes and Arctic archipelago.",
+   hist:"Much of its landscape was sculpted by Pleistocene ice sheets; the retreating ice left thousands of lakes.",
+   env:"Rapid Arctic warming, permafrost thaw, wildfires, and sea-ice decline." },
+ { n:"Mexico", f:"🇲🇽", cap:"Mexico City", cont:"North America", reg:"Latin America", area:1964375, pop:129000000, popYear:2024,
+   cur:"Mexican peso ($)", lang:"Spanish (de facto); 68 national indigenous languages", lat:23, lon:-102, code:"+52", tld:".mx",
+   geo:"Deserts and the Sierra Madre ranges in the north, tropical lowlands in the south, the Yucatán Peninsula and a long Pacific and Gulf coastline.",
+   hist:"The Chicxulub impact crater, linked to the K–Pg extinction, lies partly beneath the Yucatán Peninsula.",
+   env:"Earthquake risk in the south, hurricanes on both coasts, volcanic activity (Popocatépetl), and water stress in central Mexico." },
+ { n:"Brazil", f:"🇧🇷", cap:"Brasília", cont:"South America", reg:"South America", area:8515767, pop:212000000, popYear:2024,
+   cur:"Brazilian real (R$)", lang:"Portuguese", lat:-10, lon:-53, code:"+55", tld:".br",
+   geo:"The Amazon Basin — the world's largest rainforest and river system — the Brazilian Highlands, the Pantanal wetlands and a long Atlantic coastline.",
+   hist:"The Amazon's hydrology is closely tied to the Atlantic Ocean and the Andes, which feed the headwaters of the Amazon River.",
+   env:"Deforestation in the Amazon, drought and fire risk, and flooding in the Amazon and southern regions." },
+ { n:"Argentina", f:"🇦🇷", cap:"Buenos Aires", cont:"South America", reg:"South America", area:2780400, pop:46000000, popYear:2024,
+   cur:"Argentine peso ($)", lang:"Spanish", lat:-35, lon:-64, code:"+54", tld:".ar",
+   geo:"From subtropical forests in the north to the windswept Patagonian plateau and the Andes along the west, including Aconcagua (6,961 m) — the highest peak outside Asia.",
+   hist:"The Andes were raised by subduction of the Nazca plate beneath the South American plate.",
+   env:"Glacier retreat in the Andes, drought and wildfire in Patagonia, and flooding on the Pampas." },
+ { n:"Chile", f:"🇨🇱", cap:"Santiago", cont:"South America", reg:"South America", area:756102, pop:20000000, popYear:2024,
+   cur:"Chilean peso ($)", lang:"Spanish", lat:-33, lon:-71, code:"+56", tld:".cl",
+   geo:"An exceptionally long, narrow country — over 4,300 km north to south — running along the Andes, with the Atacama Desert (the driest non-polar desert) in the north.",
+   hist:"Its shape is a direct result of Andean subduction tectonics; the 1960 Valdivia earthquake was the most powerful ever recorded (magnitude ~9.5).",
+   env:"Very high earthquake and tsunami risk, volcanic activity, drought in the central region and glacier retreat." },
+ { n:"Peru", f:"🇵🇪", cap:"Lima", cont:"South America", reg:"South America", area:1285216, pop:34000000, popYear:2024,
+   cur:"Peruvian sol (S/)", lang:"Spanish; Quechua and Aymara are official where predominant", lat:-10, lon:-76, code:"+51", tld:".pe",
+   geo:"Three regions: the coastal desert, the high Andes and the Amazon lowlands. Lake Titicaca sits on the Altiplano at about 3,810 m.",
+   hist:"The Inca Empire was built along the Andean highlands; the Andes continue to rise due to ongoing subduction.",
+   env:"Earthquake risk, El Niño–driven floods and landslides on the coast, and Amazon deforestation." },
+ { n:"United Kingdom", f:"🇬🇧", cap:"London", cont:"Europe", reg:"Northern Europe", area:243610, pop:68000000, popYear:2024,
+   cur:"Pound sterling (£)", lang:"English; Welsh, Gaelic and others regionally", lat:54, lon:-2, code:"+44", tld:".uk",
+   geo:"The island of Great Britain plus Northern Ireland; uplands in Scotland, Wales and northern England, lowlands in the southeast.",
+   hist:"Its coastline and river valleys shaped early trade, industry and settlement; the British Isles were heavily glaciated during the Pleistocene.",
+   env:"Coastal erosion and flooding, sea-level rise risk, and changing marine ecosystems." },
+ { n:"France", f:"🇫🇷", cap:"Paris", cont:"Europe", reg:"Western Europe", area:643801, pop:68000000, popYear:2024,
+   cur:"Euro (€)", lang:"French", lat:47, lon:2, code:"+33", tld:".fr",
+   geo:"From the Alps and Pyrenees to the Atlantic and Mediterranean coasts, with the fertile Paris Basin and the Massif Central.",
+   hist:"Its varied geology includes the Alps (raised by the African–Eurasian collision) and extensive river systems such as the Loire, Rhône and Seine.",
+   env:"Alpine glacier retreat, flooding (notably in the Seine and Rhône basins), and heatwave risk." },
+ { n:"Germany", f:"🇩🇪", cap:"Berlin", cont:"Europe", reg:"Western Europe", area:357022, pop:84000000, popYear:2024,
+   cur:"Euro (€)", lang:"German", lat:51, lon:10, code:"+49", tld:".de",
+   geo:"North European Plain in the north, central uplands, the Black Forest and the Bavarian Alps in the south. Major rivers: Rhine, Danube, Elbe.",
+   hist:"Its landscape was shaped by Pleistocene ice sheets in the north and river erosion in the centre and south.",
+   env:"River flooding, heatwaves, and transition to renewable energy." },
+ { n:"Italy", f:"🇮🇹", cap:"Rome", cont:"Europe", reg:"Southern Europe", area:301340, pop:59000000, popYear:2024,
+   cur:"Euro (€)", lang:"Italian", lat:42, lon:12, code:"+39", tld:".it",
+   geo:"A peninsula extending into the Mediterranean, with the Alps in the north, the Apennines along the spine, and active volcanoes such as Etna, Vesuvius and Stromboli.",
+   hist:"Sits on the African–Eurasian collision zone, making it one of Europe's most seismically and volcanically active countries.",
+   env:"Earthquake and volcanic risk, coastal erosion, drought in the south, and sea-level rise risk in Venice." },
+ { n:"Norway", f:"🇳🇴", cap:"Oslo", cont:"Europe", reg:"Northern Europe", area:385207, pop:5600000, popYear:2024,
+   cur:"Norwegian krone (kr)", lang:"Norwegian", lat:64, lon:11, code:"+47", tld:".no",
+   geo:"A long, deeply indented coastline of fjords carved by glaciers, the Scandinavian Mountains, and territory reaching into the Arctic.",
+   hist:"Its fjords formed when glacial valleys were flooded by the sea after the last ice age.",
+   env:"Arctic warming, glacier retreat, coastal erosion, and expanding northern shipping routes." },
+ { n:"Australia", f:"🇦🇺", cap:"Canberra", cont:"Oceania", reg:"Australasia", area:7692024, pop:27000000, popYear:2024,
+   cur:"Australian dollar ($)", lang:"English (de facto)", lat:-25, lon:134, code:"+61", tld:".au",
+   geo:"The world's smallest continent and largest island: the Great Dividing Range, vast arid interior (the Outback), the Great Barrier Reef and the Great Artesian Basin.",
+   hist:"Australia has been isolated from other landmasses since it separated from Antarctica tens of millions of years ago, producing highly distinctive wildlife.",
+   env:"Extreme wildfire risk, drought cycles, coral bleaching on the Great Barrier Reef, and sea-level rise risk in coastal cities." },
+ { n:"New Zealand", f:"🇳🇿", cap:"Wellington", cont:"Oceania", reg:"Australasia", area:268021, pop:5300000, popYear:2024,
+   cur:"New Zealand dollar ($)", lang:"English, Māori and New Zealand Sign Language", lat:-41, lon:174, code:"+64", tld:".nz",
+   geo:"Two main islands on the Pacific–Australian plate boundary, with the Southern Alps, fjords, volcanoes and geothermal fields.",
+   hist:"Formed by subduction and transform faulting along the Alpine Fault and the Hikurangi subduction zone.",
+   env:"High earthquake and tsunami risk, volcanic hazards, and glacier retreat in the Southern Alps." },
+ { n:"Nepal", f:"🇳🇵", cap:"Kathmandu", cont:"Asia", reg:"South Asia", area:147516, pop:30000000, popYear:2024,
+   cur:"Nepalese rupee (₨)", lang:"Nepali (official); many regional languages", lat:28, lon:84, code:"+977", tld:".np",
+   geo:"Home to eight of the world's ten highest peaks, including Mount Everest (8,849 m), plus fertile Terai plains in the south.",
+   hist:"The Himalayas are still rising as the Indian plate pushes northward into Eurasia at roughly 4–5 cm per year.",
+   env:"Very high earthquake risk, glacial lake outburst floods, landslides, and monsoon flooding." },
+ { n:"Vietnam", f:"🇻🇳", cap:"Hanoi", cont:"Asia", reg:"Southeast Asia", area:331212, pop:99000000, popYear:2024,
+   cur:"Vietnamese đồng (₫)", lang:"Vietnamese", lat:16, lon:106, code:"+84", tld:".vn",
+   geo:"A long, narrow S-shaped country: the Red River delta in the north, the Mekong delta in the south, the Annamite Range and a 3,200 km coastline.",
+   hist:"The Mekong and Red River deltas are among the most productive agricultural regions in the world, built by millennia of sediment deposition.",
+   env:"Sea-level rise risk in the Mekong delta, typhoons, riverbank erosion, and salinisation of coastal farmland." }
+];
+const countryByName = n => COUNTRIES.find(c => c.n.toLowerCase() === String(n).toLowerCase());
+
+/* ==========================================================================
+   7. QUIZZES
+   ========================================================================== */
+const QUIZZES = [
+  { q:"Which type of plate boundary is associated with subduction and deep ocean trenches?",
+    o:["Divergent boundary","Convergent boundary","Transform boundary","Passive margin"], a:1,
+    ex:"Convergent boundaries occur where plates move toward each other; one plate descends beneath the other, forming a trench.", topic:"plate-tectonics" },
+  { q:"The Himalayas formed primarily because of…",
+    o:["Two oceanic plates diverging","The Indian plate colliding with the Eurasian plate","A hotspot under Asia","Erosion by the Ganges"], a:1,
+    ex:"Continental–continental collision between the Indian and Eurasian plates crumpled and thickened the crust.", topic:"mountains" },
+  { q:"Which process returns water vapour to the atmosphere directly from plants?",
+    o:["Evaporation","Transpiration","Condensation","Infiltration"], a:1,
+    ex:"Transpiration is the release of water vapour from plant leaves — a major part of the water cycle.", topic:"water-cycle" },
+  { q:"Which of these is the largest known mass extinction event?",
+    o:["End-Cretaceous (K–Pg)","End-Ordovician","End-Permian","Late Devonian"], a:2,
+    ex:"The end-Permian extinction (~252 Ma) eliminated roughly 80% of marine species.", topic:"mass-extinctions" },
+  { q:"Earth's seasons are primarily caused by…",
+    o:["Changes in distance from the Sun","The 23.4° axial tilt","Solar flares","Ocean currents"], a:1,
+    ex:"Axial tilt changes the angle and duration of sunlight each hemisphere receives through the year.", topic:"rotation-revolution" },
+  { q:"What drives most tectonic plate motion?",
+    o:["Ocean tides","Slab pull and mantle convection","Wind patterns","Earth's rotation alone"], a:1,
+    ex:"Slab pull from dense subducting plates is considered the dominant force, assisted by mantle convection and ridge push.", topic:"plate-tectonics" },
+  { q:"The Great Barrier Reef is located off the coast of which country?",
+    o:["Brazil","Indonesia","Australia","Mexico"], a:2,
+    ex:"It lies off Queensland in northeastern Australia and is the world's largest coral reef system.", topic:"oceans" },
+  { q:"Which climate classification uses the letters A, B, C, D and E for major groups?",
+    o:["Thornthwaite","Köppen","Trewartha","Holdridge"], a:1,
+    ex:"The Köppen system groups climates as tropical (A), dry (B), temperate (C), continental (D) and polar (E).", topic:"climate-zones" },
+  { q:"El Niño is characterised by…",
+    o:["Unusually cool eastern Pacific water","Unusually warm eastern Pacific water","Stronger trade winds than normal","A weakening of Earth's magnetic field"], a:1,
+    ex:"During El Niño, weakened trade winds allow warm surface water to spread eastward across the tropical Pacific.", topic:"el-nino" },
+  { q:"Earth's magnetic field is generated mainly in the…",
+    o:["Crust","Mantle","Liquid outer core","Inner core"], a:2,
+    ex:"Convection of electrically conducting liquid iron in the outer core creates the geodynamo.", topic:"earths-magnetic-field" }
+];
+
+/* ==========================================================================
+   8. GLOBE (Three.js)
+   ========================================================================== */
+const LAND_POLYGONS = [
+  // North America (incl. Central America)
+  [[-168,66],[-166,60],[-158,57],[-152,59],[-140,60],[-133,55],[-124,49],[-124,40],[-117,32],[-110,24],[-105,20],[-96,16],[-92,15],[-84,10],[-78,8],[-83,15],[-88,21],[-95,29],[-90,29],[-84,30],[-81,25],[-80,32],[-76,37],[-70,42],[-66,45],[-60,47],[-56,51],[-64,60],[-78,62],[-80,70],[-95,72],[-110,70],[-125,70],[-140,70],[-156,71]],
+  // Greenland
+  [[-45,60],[-20,70],[-20,76],[-30,83],[-55,83],[-60,76],[-55,66]],
+  // South America
+  [[-81,-4],[-79,2],[-77,8],[-71,12],[-62,11],[-52,5],[-50,0],[-44,-2],[-35,-6],[-39,-14],[-48,-25],[-53,-34],[-58,-38],[-62,-40],[-65,-45],[-68,-52],[-75,-52],[-73,-45],[-71,-30],[-70,-18],[-75,-14]],
+  // Africa
+  [[-17,15],[-16,21],[-13,28],[-6,35],[10,37],[20,32],[32,31],[35,24],[37,18],[43,12],[51,12],[48,3],[41,-2],[40,-12],[35,-22],[32,-26],[27,-34],[20,-35],[14,-23],[12,-16],[9,-1],[9,4],[3,6],[-8,5],[-13,9]],
+  // Eurasia
+  [[-9,38],[-9,43],[-2,43],[0,49],[-4,48],[2,51],[4,53],[8,54],[10,58],[5,58],[7,63],[15,68],[22,70],[30,70],[40,68],[55,70],[70,72],[80,74],[100,77],[115,74],[130,72],[145,70],[160,70],[170,67],[180,66],[180,62],[170,60],[160,60],[155,57],[145,55],[140,52],[135,45],[130,43],[126,38],[122,30],[120,22],[110,21],[105,10],[100,6],[98,15],[93,20],[89,22],[80,15],[77,8],[72,20],[65,25],[58,25],[50,29],[43,39],[36,36],[28,37],[20,40],[14,38],[12,45],[19,40],[13,36],[3,42],[-2,36]],
+  // Australia
+  [[113,-22],[114,-34],[118,-35],[129,-32],[137,-35],[141,-38],[147,-38],[153,-28],[146,-19],[142,-11],[135,-12],[130,-11],[125,-14],[122,-18]],
+  // Antarctica
+  [[-180,-70],[-160,-73],[-140,-75],[-120,-73],[-100,-74],[-80,-70],[-60,-63],[-40,-70],[-20,-70],[0,-70],[20,-68],[40,-67],[60,-67],[80,-67],[100,-66],[120,-66],[140,-66],[160,-70],[180,-70],[180,-90],[-180,-90]],
+  // Islands
+  [[-5,50],[-5,58],[-2,58],[0,53],[1,51]],
+  [[130,32],[135,34],[140,36],[142,42],[145,44],[141,45],[138,37],[132,34]],
+  [[44,-16],[50,-15],[50,-25],[45,-25]],
+  [[172,-34],[178,-38],[177,-40],[174,-41],[170,-46],[166,-46],[171,-42]],
+  [[95,5],[106,-6],[104,-6],[95,3]],
+  [[105,-6],[114,-8],[114,-8.6],[105,-7]],
+  [[109,2],[117,4],[119,-3],[110,-3]],
+  [[131,-1],[141,-3],[150,-9],[143,-9],[134,-8]],
+  [[120,18],[124,13],[126,7],[122,6],[120,13]],
+  [[-8,52],[-6,55],[-3,58],[-6,58],[-10,54]]
+];
+
+const Globe = (() => {
+  let inited=false, renderer, scene, camera, root, earthMesh, markerGroup, lineGroup, stars;
+  let raf=null, container=null, mounted=false;
+  let autoRotate = !reduced;
+  let drag=false, lastX=0, lastY=0, velX=0, velY=0, rotX=0, rotY=0;
+  let layer="political";
+  let raycaster, pointer, markers=[];
+  let onSelect = null;
+
+  function latLonToVec3(lat, lon, r){
+    const phi = (90 - lat) * Math.PI/180;
+    const theta = (lon + 180) * Math.PI/180;
+    return new THREE.Vector3(
+      -r * Math.sin(phi) * Math.cos(theta),
+       r * Math.cos(phi),
+       r * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  function buildTexture(theme){
+    const W = 2048, H = 1024;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+    const dark = theme !== "light";
+
+    // Ocean
+    const og = ctx.createLinearGradient(0,0,0,H);
+    if (dark){ og.addColorStop(0,"#0a2740"); og.addColorStop(.5,"#0d3a5c"); og.addColorStop(1,"#0a2740"); }
+    else { og.addColorStop(0,"#9dc4e8"); og.addColorStop(.5,"#7fb0dd"); og.addColorStop(1,"#9dc4e8"); }
+    ctx.fillStyle = og; ctx.fillRect(0,0,W,H);
+
+    // Graticule
+    ctx.strokeStyle = dark ? "rgba(140,200,255,.10)" : "rgba(20,60,110,.14)";
+    ctx.lineWidth = 1.2;
+    for (let lon=-180; lon<=180; lon+=30){
+      const x = (lon+180)/360*W;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    }
+    for (let lat=-60; lat<=60; lat+=30){
+      const y = (90-lat)/180*H;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+    // Equator emphasis
+    ctx.strokeStyle = dark ? "rgba(120,190,255,.18)" : "rgba(20,60,110,.22)";
+    ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+
+    // Land
+    const toXY = p => [ (p[0]+180)/360*W, (90-p[1])/180*H ];
+    ctx.fillStyle = dark ? "#1f5a44" : "#4f9e73";
+    ctx.strokeStyle = dark ? "#3fae86" : "#2c7a55";
+    ctx.lineWidth = 2;
+    for (const poly of LAND_POLYGONS){
+      ctx.beginPath();
+      poly.forEach((p,i) => { const [x,y] = toXY(p); i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); });
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+    // Antarctica white
+    ctx.fillStyle = dark ? "#dfeaf5" : "#f4f9ff";
+    ctx.beginPath();
+    [[-180,-70],[-160,-73],[-140,-75],[-120,-73],[-100,-74],[-80,-70],[-60,-63],[-40,-70],[-20,-70],[0,-70],[20,-68],[40,-67],[60,-67],[80,-67],[100,-66],[120,-66],[140,-66],[160,-70],[180,-70],[180,-90],[-180,-90]]
+      .forEach((p,i) => { const [x,y] = toXY(p); i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); });
+    ctx.closePath(); ctx.fill();
+    // Greenland ice
+    ctx.beginPath();
+    [[-45,60],[-20,70],[-20,76],[-30,83],[-55,83],[-60,76],[-55,66]]
+      .forEach((p,i) => { const [x,y] = toXY(p); i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); });
+    ctx.closePath(); ctx.fillStyle = dark ? "#cfe0ef" : "#ffffff"; ctx.fill();
+
+    // Polar ice gradient
+    const ng = ctx.createLinearGradient(0,0,0,H*0.10);
+    ng.addColorStop(0,"rgba(255,255,255,.85)"); ng.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle = ng; ctx.fillRect(0,0,W,H*0.10);
+    const sg = ctx.createLinearGradient(0,H,0,H*0.90);
+    sg.addColorStop(0,"rgba(255,255,255,.9)"); sg.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle = sg; ctx.fillRect(0,H*0.90,W,H*0.10);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  function makeDot(lat, lon, color, size, data){
+    const geo = new THREE.SphereGeometry(size, 10, 10);
+    const mat = new THREE.MeshBasicMaterial({ color });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.copy(latLonToVec3(lat, lon, 1.005 + size));
+    m.userData = data || {};
+    m.userData.isMarker = true;
+    return m;
+  }
+
+  function clearGroup(g){
+    while (g.children.length){
+      const c = g.children.pop();
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+    }
+  }
+
+  function buildMarkers(){
+    clearGroup(markerGroup); clearGroup(lineGroup); markers = [];
+    const add = (lat,lon,color,size,data) => { const d = makeDot(lat,lon,color,size,data); markerGroup.add(d); markers.push(d); };
+    const line = (pts, color, opacity=0.9) => {
+      const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => latLonToVec3(p[0], p[1], 1.012)));
+      const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color, transparent:true, opacity }));
+      lineGroup.add(l);
+    };
+
+    if (layer === "political"){
+      COUNTRIES.forEach(c => add(c.lat, c.lon, 0x4ea8ff, 0.011, {
+        title:c.n, sub:`Capital: ${c.cap}`, nav:"country", param:c.n
+      }));
+    }
+    else if (layer === "physical"){
+      [["Himalayas",28,84],["Andes",-20,-68],["Rocky Mountains",44,-110],["Alps",46,10],["Atlas",32,-5],
+       ["Urals",60,59],["Appalachians",38,-80],["Great Dividing Range",-25,148],["Kilimanjaro",-3,37],
+       ["Mount Fuji",35.36,138.73],["Mount Everest",27.99,86.93],["Aconcagua",-32.65,-70.01],
+       ["Sahara Desert",23,13],["Gobi Desert",42,105],["Amazon Basin",-3,-60],["Congo Basin",0,22],
+       ["Great Barrier Reef",-18,147],["Grand Canyon",36.1,-112.1],["Siberian Taiga",60,100]]
+        .forEach(([n,la,lo]) => add(la, lo, 0x41e0b0, 0.010, { title:n, sub:"Physical feature", nav:"search", param:n }));
+    }
+    else if (layer === "geological"){
+      line([[60,150],[45,145],[35,140],[30,132],[20,122],[10,125],[0,128],[-10,120],[-20,115],[-35,150],[-45,170]], 0xff7a59);
+      line([[-25,-70],[-20,-70],[-10,-75],[0,-78],[10,-75],[20,-70],[30,-68],[40,-70],[50,-68]], 0xffc24b);
+      line([[70,-20],[60,-25],[50,-30],[35,-35],[20,-40],[5,-30],[-10,-25],[-20,-15]], 0xa78bfa);
+      line([[28,35],[35,45],[40,55],[35,65],[30,75],[28,85],[28,95]], 0xff7a59);
+      [["Iceland",64.9,-19.0],["Yellowstone",44.4,-110.6],["Hawai'i",19.6,-155.5],["Galápagos",-0.5,-90.5],
+       ["Mount Etna",37.75,14.99],["Krakatoa",-6.1,105.4],["Santorini",36.4,25.4],["Deccan Traps",19,76]]
+        .forEach(([n,la,lo]) => add(la, lo, 0xff7a59, 0.010, { title:n, sub:"Volcanic / geological site", nav:"search", param:n }));
+    }
+    else if (layer === "climate"){
+      [["Tropical rainforest (Af)",0,-62],["Tropical savanna (Aw)",-12,28],["Hot desert (BWh)",24,14],
+       ["Mediterranean (Csa)",38,20],["Humid subtropical (Cfa)",32,88],["Marine west coast (Cfb)",50,4],
+       ["Humid continental (Dfb)",55,40],["Subarctic (Dfc)",64,25],["Tundra (ET)",70,90],
+       ["Ice cap (EF)",-80,0]]
+        .forEach(([n,la,lo]) => add(la, lo, 0xa78bfa, 0.011, { title:n, sub:"Köppen climate zone (indicative location)", nav:"topic", param:"climate-zones" }));
+    }
+    else if (layer === "population"){
+      COUNTRIES.slice().sort((a,b) => b.pop - a.pop).forEach(c => {
+        const s = 0.006 + Math.min(0.020, (c.pop / 1.5e9) * 0.030);
+        add(c.lat, c.lon, 0xffc24b, s, { title:c.n, sub:`≈ ${(c.pop/1e6).toFixed(0)} million (${c.popYear} est.)`, nav:"country", param:c.n });
+      });
+    }
+    else if (layer === "disasters"){
+      [["Ring of Fire (Pacific belt)",35,142],["San Andreas Fault",36,-120],["North Anatolian Fault",40,36],
+       ["Himalayan seismic belt",28,85],["East African Rift",-3,36],["Mid-Atlantic Ridge",0,-25],
+       ["Atlantic hurricane belt",20,-60],["Tornado Alley",35,-98],["Indian Ocean tsunami zone",5,95]]
+        .forEach(([n,la,lo]) => add(la, lo, 0xff7a59, 0.011, { title:n, sub:"Hazard zone (indicative)", nav:"topic", param:"earthquakes" }));
+    }
+  }
+
+  function init(){
+    if (inited || typeof THREE === "undefined") return;
+    inited = true;
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+    camera.position.set(0, 0, 3.1);
+
+    renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:"high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.domElement.className = "globe-canvas";
+    renderer.domElement.setAttribute("aria-label","Interactive 3D Earth globe");
+    renderer.domElement.setAttribute("role","img");
+
+    root = new THREE.Group(); scene.add(root);
+
+    const tex = buildTexture(document.documentElement.dataset.theme);
+    earthMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 72, 48),
+      new THREE.MeshPhongMaterial({ map: tex, shininess: 8, specular: new THREE.Color(0x113355) })
+    );
+    root.add(earthMesh);
+
+    // Atmosphere
+    const atmoMat = new THREE.ShaderMaterial({
+      transparent:true, side: THREE.BackSide, depthWrite:false,
+      uniforms:{ c:{ value:new THREE.Color(0x4ea8ff) } },
+      vertexShader:`varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader:`uniform vec3 c; varying vec3 vN; void main(){ float i = pow(0.72 - dot(vN, vec3(0,0,1.0)), 3.0); gl_FragColor = vec4(c, 1.0) * i; }`
+    });
+    root.add(new THREE.Mesh(new THREE.SphereGeometry(1.16, 48, 32), atmoMat));
+
+    markerGroup = new THREE.Group(); root.add(markerGroup);
+    lineGroup   = new THREE.Group(); root.add(lineGroup);
+
+    // Stars
+    const starGeo = new THREE.BufferGeometry();
+    const pos = new Float32Array(1400 * 3);
+    for (let i=0;i<1400;i++){
+      const r = 40 + Math.random()*60;
+      const t = Math.random()*Math.PI*2, p = Math.acos(2*Math.random()-1);
+      pos[i*3]   = r*Math.sin(p)*Math.cos(t);
+      pos[i*3+1] = r*Math.cos(p);
+      pos[i*3+2] = r*Math.sin(p)*Math.sin(t);
+    }
+    starGeo.setAttribute("position", new THREE.BufferAttribute(pos,3));
+    stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffffff, size:0.35, transparent:true, opacity:0.7, sizeAttenuation:true }));
+    scene.add(stars);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.15);
+    sun.position.set(4, 2, 3); scene.add(sun);
+    const rim = new THREE.DirectionalLight(0x4ea8ff, 0.42);
+    rim.position.set(-4, -1, -3); scene.add(rim);
+
+    raycaster = new THREE.Raycaster();
+    pointer = new THREE.Vector2();
+
+    buildMarkers();
+    attachInput();
+  }
+
+  function attachInput(){
+    const el = renderer.domElement;
+    el.addEventListener("pointerdown", e => {
+      drag = true; lastX = e.clientX; lastY = e.clientY;
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener("pointermove", e => {
+      if (!drag) return;
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      rotY += dx * 0.005;
+      rotX = clamp(rotX + dy * 0.004, -1.15, 1.15);
+      velX = dx * 0.005; velY = dy * 0.004;
+    });
+    el.addEventListener("pointerup", e => {
+      drag = false;
+      if (Math.abs(velX) < 0.002 && Math.abs(velY) < 0.002) pick(e);
+      velX = 0; velY = 0;
+    });
+    el.addEventListener("wheel", e => {
+      e.preventDefault();
+      camera.position.z = clamp(camera.position.z + e.deltaY * 0.0016, 1.45, 6.5);
+    }, { passive:false });
+  }
+
+  function pick(e){
+    if (!container) return;
+    const r = renderer.domElement.getBoundingClientRect();
+    pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(markers, false);
+    if (hits.length && onSelect) onSelect(hits[0].object.userData);
+  }
+
+  function resize(){
+    if (!renderer || !container) return;
+    const w = container.clientWidth || 600, h = container.clientHeight || 400;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+
+  function loop(){
+    raf = requestAnimationFrame(loop);
+    if (!drag){
+      rotY += velX; rotX = clamp(rotX + velY, -1.15, 1.15);
+      velX *= 0.94; velY *= 0.90;
+      if (autoRotate) rotY += 0.0012;
+    }
+    root.rotation.y = rotY;
+    root.rotation.x = rotX;
+    if (stars) stars.rotation.y += 0.00012;
+    renderer.render(scene, camera);
+  }
+
+  return {
+    get available(){ return typeof THREE !== "undefined"; },
+    mount(el, opts = {}){
+      if (!this.available){ el.innerHTML = '<div class="css-globe"></div><div class="globe-hint">WebGL unavailable — showing static globe</div>'; return; }
+      init();
+      container = el;
+      el.appendChild(renderer.domElement);
+      onSelect = opts.onSelect || null;
+      mounted = true;
+      resize();
+      if (!raf) loop();
+      if (window.ResizeObserver){
+        if (this._ro) this._ro.disconnect();
+        this._ro = new ResizeObserver(resize);
+        this._ro.observe(el);
+      }
+    },
+    unmount(){
+      mounted = false;
+      if (raf){ cancelAnimationFrame(raf); raf = null; }
+      if (this._ro){ this._ro.disconnect(); this._ro = null; }
+      if (renderer && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+      container = null;
+    },
+    setLayer(l){ layer = l; if (inited) buildMarkers(); },
+    getLayer(){ return layer; },
+    setTheme(theme){
+      if (!inited || !earthMesh) return;
+      earthMesh.material.map.dispose();
+      earthMesh.material.map = buildTexture(theme);
+      earthMesh.material.needsUpdate = true;
+    },
+    focus(lat, lon){
+      rotY = -(lon + 180) * Math.PI/180 + Math.PI;
+      rotX = clamp(lat * Math.PI/180, -1.15, 1.15);
+      camera.position.z = clamp(2.0, 1.45, 6.5);
+    },
+    setAutoRotate(v){ autoRotate = v; }
+  };
+})();
+
+/* ==========================================================================
+   9. VISUALISATIONS (canvas 2D)
+   ========================================================================== */
+let vizLoops = [];
+function stopViz(){ vizLoops.forEach(id => cancelAnimationFrame(id)); vizLoops = []; }
+function vizLoop(fn){ const id = requestAnimationFrame(t => { fn(t); }); vizLoops.push(id); }
+
+function TectonicsViz(canvas){
+  const ctx = canvas.getContext("2d");
+  let mode = "convergent", t = 0;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+
+  function size(){
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * dpr; canvas.height = 300 * dpr;
+    canvas.style.height = "300px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return { w: r.width, h: 300 };
+  }
+  let dim = size();
+  new ResizeObserver(() => { dim = size(); }).observe(canvas);
+
+  const styles = getComputedStyle(document.documentElement);
+  function col(name, fallback){ return styles.getPropertyValue(name).trim() || fallback; }
+
+  function draw(){
+    t += 1;
+    const { w, h } = dim;
+    const dark = document.documentElement.dataset.theme !== "light";
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = dark ? "#070e1a" : "#f0f5fc";
+    ctx.fillRect(0,0,w,h);
+
+    // mantle
+    const mg = ctx.createLinearGradient(0, h*0.55, 0, h);
+    mg.addColorStop(0, dark ? "#2a1408" : "#f6d8bd");
+    mg.addColorStop(1, dark ? "#5c2a10" : "#e0ab7c");
+    ctx.fillStyle = mg; ctx.fillRect(0, h*0.58, w, h*0.42);
+
+    const cycle = (t % 300) / 300;
+    const off = Math.sin(cycle * Math.PI * 2) * 14;
+
+    function plate(x, y, pw, ph, color, label){
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, pw, ph, 7);
+      ctx.fill();
+      ctx.strokeStyle = dark ? "rgba(255,255,255,.22)" : "rgba(0,0,0,.18)";
+      ctx.stroke();
+      ctx.fillStyle = dark ? "#e9effc" : "#0c1a2e";
+      ctx.font = "600 12px ui-sans-serif, system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(label, x + pw/2, y + ph/2 + 4);
+    }
+
+    const top = h*0.30, ph = h*0.26;
+    ctx.textAlign = "center";
+    ctx.fillStyle = dark ? "#8fa1c0" : "#5a6c88";
+    ctx.font = "600 12px ui-sans-serif, system-ui";
+    ctx.fillText("LITHOSPHERE (plates)", w/2, top - 14);
+
+    if (mode === "convergent"){
+      plate(w*0.06 - off, top, w*0.40, ph, dark ? "#2f5d8a" : "#8fb8dd", "Oceanic plate");
+      plate(w*0.54 + off, top, w*0.40, ph, dark ? "#2f7a5e" : "#9ad3b4", "Continental plate");
+      // subduction wedge
+      ctx.fillStyle = dark ? "#2f5d8a" : "#8fb8dd";
+      ctx.beginPath();
+      ctx.moveTo(w*0.46 - off, top + ph);
+      ctx.lineTo(w*0.60 + off, top + ph + 70);
+      ctx.lineTo(w*0.50 - off, top + ph + 12);
+      ctx.closePath(); ctx.fill();
+      // mountains
+      ctx.fillStyle = dark ? "#41e0b0" : "#0a9c73";
+      ctx.beginPath();
+      ctx.moveTo(w*0.56 + off, top);
+      ctx.lineTo(w*0.66 + off, top - 46);
+      ctx.lineTo(w*0.76 + off, top);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = dark ? "#e9effc" : "#0c1a2e";
+      ctx.font = "600 11px ui-sans-serif";
+      ctx.fillText("Mountain belt", w*0.66 + off, top - 56);
+      ctx.fillText("Trench", w*0.48 - off, top + ph + 88);
+    } else if (mode === "divergent"){
+      plate(w*0.06 - off, top, w*0.42, ph, dark ? "#2f7a5e" : "#9ad3b4", "Plate A");
+      plate(w*0.52 + off, top, w*0.42, ph, dark ? "#2f7a5e" : "#9ad3b4", "Plate B");
+      // ridge / magma
+      const cx = w/2;
+      const rg = ctx.createLinearGradient(cx, top+ph, cx, h);
+      rg.addColorStop(0, "rgba(255,122,89,.95)");
+      rg.addColorStop(1, "rgba(255,122,89,0)");
+      ctx.fillStyle = rg;
+      ctx.beginPath();
+      ctx.moveTo(cx - 26, top + ph + 40);
+      ctx.lineTo(cx + 26, top + ph + 40);
+      ctx.lineTo(cx + 8, top + ph - 4);
+      ctx.lineTo(cx - 8, top + ph - 4);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = dark ? "#e9effc" : "#0c1a2e";
+      ctx.font = "600 11px ui-sans-serif";
+      ctx.fillText("Mid-ocean ridge", cx, top - 18);
+      ctx.fillText("Magma rises", cx, top + ph + 58);
+    } else {
+      plate(w*0.04 - off, top, w*0.46, ph, dark ? "#5b4a8a" : "#bcaee6", "Plate A");
+      plate(w*0.50 + off, top, w*0.46, ph, dark ? "#8a6a3a" : "#e6cfae", "Plate B");
+      ctx.strokeStyle = "#ff7a59"; ctx.lineWidth = 2.5; ctx.setLineDash([6,5]);
+      ctx.beginPath(); ctx.moveTo(w/2, top - 26); ctx.lineTo(w/2, top + ph + 8); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = dark ? "#e9effc" : "#0c1a2e";
+      ctx.font = "600 11px ui-sans-serif";
+      ctx.fillText("Transform fault — plates slide past", w/2, top - 36);
+    }
+
+    // arrows
+    ctx.strokeStyle = dark ? "#4ea8ff" : "#1b74e4";
+    ctx.lineWidth = 2.5;
+    function arrow(x1,y1,x2,y2){
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      const a = Math.atan2(y2-y1, x2-x1);
+      ctx.beginPath();
+      ctx.moveTo(x2,y2);
+      ctx.lineTo(x2 - 9*Math.cos(a-0.4), y2 - 9*Math.sin(a-0.4));
+      ctx.lineTo(x2 - 9*Math.cos(a+0.4), y2 - 9*Math.sin(a+0.4));
+      ctx.closePath(); ctx.fillStyle = dark ? "#4ea8ff" : "#1b74e4"; ctx.fill();
+    }
+    if (mode === "convergent"){
+      arrow(w*0.10, top+ph+18, w*0.26, top+ph+18);
+      arrow(w*0.90, top+ph+18, w*0.74, top+ph+18);
+    } else if (mode === "divergent"){
+      arrow(w*0.30, top-24, w*0.14, top-24);
+      arrow(w*0.70, top-24, w*0.86, top-24);
+    } else {
+      arrow(w*0.20, top+ph+22, w*0.40, top+ph+22);
+      arrow(w*0.80, top+ph+22, w*0.60, top+ph+22);
+    }
+
+    ctx.fillStyle = dark ? "#8fa1c0" : "#5a6c88";
+    ctx.font = "11px ui-sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(mode === "convergent" ? "Convergent: crust is destroyed (subduction) and mountains rise"
+              : mode === "divergent" ? "Divergent: new crust is created at the ridge"
+              : "Transform: crust is neither created nor destroyed", w/2, h - 12);
+
+    vizLoop(draw);
+  }
+  const api = {
+    setMode(m){ mode = m; },
+    start(){ vizLoop(draw); },
+    stop(){ stopViz(); }
+  };
+  return api;
+}
+
+function WaterCycleViz(canvas){
+  const ctx = canvas.getContext("2d");
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  let dim = { w: 600, h: 320 }, t = 0, parts = [];
+  function size(){
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width*dpr; canvas.height = 320*dpr; canvas.style.height = "320px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    dim = { w: r.width, h: 320 };
+  }
+  size();
+  new ResizeObserver(size).observe(canvas);
+
+  for (let i=0;i<70;i++) parts.push({ x: Math.random(), y: Math.random(), s: 0.3 + Math.random()*0.7, p: Math.random()*Math.PI*2 });
+
+  function draw(){
+    t += 1;
+    const { w, h } = dim;
+    const dark = document.documentElement.dataset.theme !== "light";
+    ctx.clearRect(0,0,w,h);
+
+    // sky
+    const sg = ctx.createLinearGradient(0,0,0,h*0.72);
+    sg.addColorStop(0, dark ? "#0a1a2e" : "#cfe4fa");
+    sg.addColorStop(1, dark ? "#123049" : "#e9f3ff");
+    ctx.fillStyle = sg; ctx.fillRect(0,0,w,h*0.72);
+
+    // sun
+    ctx.beginPath();
+    ctx.arc(w*0.12, h*0.16, 26, 0, Math.PI*2);
+    const sunG = ctx.createRadialGradient(w*0.12,h*0.16,4,w*0.12,h*0.16,44);
+    sunG.addColorStop(0,"#ffe08a"); sunG.addColorStop(1,"rgba(255,224,138,0)");
+    ctx.fillStyle = sunG; ctx.fill();
+
+    // mountain
+    ctx.fillStyle = dark ? "#1c3b52" : "#8fa9c4";
+    ctx.beginPath();
+    ctx.moveTo(w*0.55, h*0.72);
+    ctx.lineTo(w*0.72, h*0.28);
+    ctx.lineTo(w*0.90, h*0.72);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = dark ? "#dfeaf5" : "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(w*0.72, h*0.28);
+    ctx.lineTo(w*0.775, h*0.40);
+    ctx.lineTo(w*0.665, h*0.40);
+    ctx.closePath(); ctx.fill();
+
+    // ocean
+    const og = ctx.createLinearGradient(0,h*0.72,0,h);
+    og.addColorStop(0, dark ? "#0d3a5c" : "#7fb0dd");
+    og.addColorStop(1, dark ? "#061a2c" : "#5a90c4");
+    ctx.fillStyle = og; ctx.fillRect(0, h*0.72, w, h*0.28);
+    ctx.strokeStyle = dark ? "rgba(140,200,255,.35)" : "rgba(20,60,110,.35)";
+    ctx.beginPath(); ctx.moveTo(0, h*0.72); ctx.lineTo(w, h*0.72); ctx.stroke();
+
+    // clouds
+    const cShift = Math.sin(t*0.006)*14;
+    function cloud(x, y, s){
+      ctx.fillStyle = dark ? "rgba(210,228,248,.55)" : "rgba(255,255,255,.92)";
+      ctx.beginPath();
+      ctx.arc(x, y, 20*s, 0, Math.PI*2);
+      ctx.arc(x+22*s, y-7*s, 25*s, 0, Math.PI*2);
+      ctx.arc(x+48*s, y, 19*s, 0, Math.PI*2);
+      ctx.fill();
+    }
+    cloud(w*0.24 + cShift, h*0.22, 1);
+    cloud(w*0.60 + cShift, h*0.14, 0.85);
+
+    // particles
+    parts.forEach(p => {
+      const phase = (t*0.0035*p.s + p.p) % 1;
+      let x, y;
+      if (phase < 0.42){          // evaporation
+        const k = phase/0.42;
+        x = w*0.30 + Math.sin(phase*10)*8;
+        y = h*0.72 - k*(h*0.50);
+      } else if (phase < 0.72){   // transport (cloud drift)
+        const k = (phase-0.42)/0.30;
+        x = w*0.30 + k*(w*0.42);
+        y = h*0.22 + Math.sin(k*6)*6;
+      } else {                     // precipitation
+        const k = (phase-0.72)/0.28;
+        x = w*0.72 + Math.sin(k*3)*10;
+        y = h*0.24 + k*(h*0.48);
+      }
+      ctx.fillStyle = phase < 0.72
+        ? (dark ? "rgba(120,200,255,.85)" : "rgba(40,110,190,.75)")
+        : (dark ? "rgba(160,220,255,.9)"  : "rgba(30,90,170,.85)");
+      ctx.beginPath(); ctx.arc(x, y, 2 + p.s*1.6, 0, Math.PI*2); ctx.fill();
+    });
+
+    // labels
+    ctx.font = "600 11.5px ui-sans-serif, system-ui";
+    ctx.fillStyle = dark ? "#cfe0f5" : "#123048";
+    ctx.textAlign = "left";
+    ctx.fillText("Evaporation / transpiration", w*0.04, h*0.62);
+    ctx.fillText("Condensation", w*0.30, h*0.42);
+    ctx.fillText("Precipitation", w*0.60, h*0.10);
+    ctx.fillText("Runoff → collection", w*0.04, h*0.94);
+
+    vizLoop(draw);
+  }
+  return { start(){ vizLoop(draw); }, stop(){ stopViz(); } };
+}
+
+/* ==========================================================================
+   10. NAVIGATION
+   ========================================================================== */
+const NAV = [
+  { id:"home",      label:"Home",       icon:"🏠" },
+  { id:"learn",     label:"Learn",      icon:"📚" },
+  { id:"explore",   label:"Explore Earth", icon:"🌐" },
+  { id:"timeline",  label:"Timeline",   icon:"⏳" },
+  { id:"countries", label:"Countries",  icon:"🗺️" },
+  { id:"quizzes",   label:"Quizzes",    icon:"🎯" },
+  { id:"bookmarks", label:"Bookmarks",  icon:"🔖" },
+  { id:"progress",  label:"Progress",   icon:"📈" }
+];
+const BOTTOM_NAV = ["home","learn","explore","timeline","progress"];
+
+function renderNav(active){
+  $("#sidenav").innerHTML = NAV.map(n =>
+    `<button class="navlink ${active===n.id?"active":""}" data-nav="${n.id}">
+       <span class="ico">${n.icon}</span><span>${n.label}</span>
+     </button>`).join("");
+  $("#bottomnav").innerHTML = BOTTOM_NAV.map(id => {
+    const n = NAV.find(x => x.id === id);
+    return `<button class="${active===id?"active":""}" data-nav="${id}">
+      <span class="ico">${n.icon}</span><span>${n.label}</span></button>`;
+  }).join("");
+}
+
+/* ==========================================================================
+   11. SHARED UI BUILDERS
+   ========================================================================== */
+function topicCard(t){
+  const done = !!store.data.completed[t.id];
+  return `<article class="card hoverable topic-card" data-nav="topic" data-param="${t.id}" tabindex="0">
+    <span class="ic">${t.icon}</span>
+    <h3>${esc(t.title)} ${done ? '<span class="chip green" style="margin-left:6px">✓ Done</span>' : ""}</h3>
+    <p style="margin-top:6px">${esc(t.summary)}</p>
+    <div class="row wrap" style="margin-top:12px">
+      <span class="chip">${esc(catById(t.cat).name)}</span>
+      ${t.viz ? `<span class="chip accent">Interactive</span>` : ""}
+    </div>
+  </article>`;
+}
+function catCard(c){
+  const total = TOPICS.filter(t => t.cat === c.id).length;
+  const done = TOPICS.filter(t => t.cat === c.id && store.data.completed[t.id]).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  return `<article class="card hoverable" data-nav="category" data-param="${c.id}" tabindex="0" style="cursor:pointer">
+    <div style="font-size:24px">${c.icon}</div>
+    <h3 style="margin-top:10px">${esc(c.name)}</h3>
+    <p style="margin-top:6px">${esc(c.blurb)}</p>
+    <div class="row" style="margin-top:14px;gap:10px">
+      <div class="bar" style="flex:1"><i style="width:${pct}%"></i></div>
+      <span class="tiny muted">${done}/${total}</span>
+    </div>
+  </article>`;
+}
+function refsBlock(ids){
+  if (!ids || !ids.length) return "";
+  return `<section class="card" style="margin-top:22px">
+    <h3>Sources &amp; References</h3>
+    <p class="small muted" style="margin-top:6px">Links point to the official resource pages of the organisations below. Primary sources are peer-reviewed or government scientific bodies; secondary sources are reputable educational publishers.</p>
+    <div style="margin-top:12px">
+      ${ids.map(id => {
+        const r = REFS[id]; if (!r) return "";
+        return `<div class="ref-item">
+          <span class="tag ${r.type}">${r.type === "primary" ? "Primary" : "Secondary"}</span>
+          <div>
+            <a href="${r.u}" target="_blank" rel="noopener noreferrer">${esc(r.t)}</a>
+            <div class="meta">${esc(r.o)} · <a href="${r.u}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px">${esc(r.u)}</a></div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+  </section>`;
+}
+function relatedBlock(ids){
+  if (!ids || !ids.length) return "";
+  const items = ids.map(topicById).filter(Boolean);
+  if (!items.length) return "";
+  return `<section style="margin-top:26px">
+    <div class="eyebrow">Knowledge graph</div>
+    <h3 style="font-size:17px;font-weight:730;margin-bottom:12px">Related Topics</h3>
+    <div class="grid g3">
+      ${items.map(t => `<button class="card hoverable" style="text-align:left" data-nav="topic" data-param="${t.id}">
+        <span style="font-size:18px">${t.icon}</span>
+        <h3 style="margin-top:8px;font-size:14px">${esc(t.title)}</h3>
+      </button>`).join("")}
+    </div>
+  </section>`;
+}
+function whyBlock(steps){
+  if (!steps || !steps.length) return "";
+  return `<section class="card" style="margin-top:22px;border-color:color-mix(in srgb,var(--accent) 34%,transparent)">
+    <div class="eyebrow">Cause → Process → Change</div>
+    <h3 style="font-size:17px;font-weight:730">Why did this happen?</h3>
+    <div class="whyflow" style="margin-top:14px">
+      ${steps.map((s,i) => `
+        <div class="why-step">
+          <span class="dot">${i+1}</span>
+          <p>${esc(s)}</p>
+        </div>
+        ${i < steps.length-1 ? '<div class="why-arrow">↓</div>' : ""}
+      `).join("")}
+    </div>
+  </section>`;
+}
+
+/* ==========================================================================
+   12. VIEWS
+   ========================================================================== */
+let currentViz = null;
+
+/* ---------------- HOME ---------------- */
+function viewHome(){
+  const recent = store.data.recent.map(topicById).filter(Boolean).slice(0,3);
+  const popular = ["plate-tectonics","mountains","water-cycle","climate-zones","earthquakes","oceans"].map(topicById);
+  const featured = ["formation-of-earth","plate-tectonics","water-cycle","mountains","climate-zones","earthquakes"].map(topicById);
+
+  return `
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="chip accent" style="width:fit-content">Interactive digital Earth atlas</span>
+      <h2>Explore Earth.<br/><em>Understand its story.</em></h2>
+      <p>Discover how our planet formed, how its surface was sculpted, and how geography shapes the world we live in today — through a 3D globe, timelines and interactive processes.</p>
+      <div class="hero-cta">
+        <button class="btn primary" data-nav="explore">🌐 Open the 3D Globe</button>
+        <button class="btn" data-nav="learn">📚 Start Learning</button>
+        <button class="btn" data-nav="timeline">⏳ Earth Through Time</button>
+      </div>
+    </div>
+    <div class="hero-globe">
+      <div class="globe-wrap" data-globe="home"></div>
+      <div class="globe-hint">Drag to rotate · scroll to zoom · click a marker</div>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <div><div class="eyebrow">Start here</div><h2>Explore Geography</h2></div>
+    <p>Nine subject areas, from the formation of Earth to the modern political map.</p>
+  </div>
+  <div class="grid g3">${CATEGORIES.map(catCard).join("")}</div>
+
+  <div class="section-head">
+    <div><div class="eyebrow">Flagship feature</div><h2>Earth Through Time</h2></div>
+    <p>Scrub through 4.6 billion years of Earth history.</p>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="miniTimeline"></div>
+  </div>
+
+  <div class="section-head">
+    <div><div class="eyebrow">Look it up</div><h2>Explore Any Country</h2></div>
+    <p>Search 30+ country profiles with geography, culture and environment data.</p>
+  </div>
+  <div class="card">
+    <label class="searchbox" style="max-width:100%">
+      <span aria-hidden="true">🔎</span>
+      <input id="homeCountrySearch" type="search" placeholder="Search for a country… e.g. India, Japan, Brazil" aria-label="Search for a country"/>
+    </label>
+    <div class="row wrap" style="margin-top:12px">
+      ${["India","Japan","Brazil","Egypt","Australia","Nepal"].map(n =>
+        `<button class="chip" data-nav="country" data-param="${n}" style="cursor:pointer">${esc(n)}</button>`).join("")}
+    </div>
+  </div>
+
+  ${recent.length ? `
+  <div class="section-head"><div><div class="eyebrow">Pick up where you left off</div><h2>Continue Learning</h2></div></div>
+  <div class="grid g3">${recent.map(topicCard).join("")}</div>` : ""}
+
+  <div class="section-head">
+    <div><div class="eyebrow">Core concepts</div><h2>Recommended Topics</h2></div>
+    <p>Essential starting points for building a solid foundation.</p>
+  </div>
+  <div class="grid g3">${featured.map(topicCard).join("")}</div>
+
+  <div class="section-head">
+    <div><div class="eyebrow">Most explored</div><h2>Popular Topics</h2></div>
+  </div>
+  <div class="grid g4">${popular.map(t => `
+    <button class="card hoverable" style="text-align:left" data-nav="topic" data-param="${t.id}">
+      <span style="font-size:20px">${t.icon}</span>
+      <h3 style="margin-top:9px;font-size:13.5px">${esc(t.title)}</h3>
+    </button>`).join("")}</div>
+
+  <section class="card" style="margin-top:34px">
+    <div class="eyebrow">About this prototype</div>
+    <h3 style="font-size:16px">How this application is built</h3>
+    <p class="small" style="margin-top:8px">Content is stored as structured data (topics, countries, references, timeline), so new material can be added without touching the interface code. Geography is presented as an interactive knowledge graph: every topic links to related concepts, and every causal chain is shown as a step-by-step flow.</p>
+    <p class="small" style="margin-top:8px"><strong>Accuracy note:</strong> population figures are dated estimates (2024 unless stated); geological dates are approximate and carry scientific uncertainty, which is flagged in the relevant topics. The globe uses a simplified, stylised land outline for performance — it is not a survey-grade basemap and does not depict international boundaries.</p>
+  </section>
+  `;
+}
+
+/* ---------------- LEARN ---------------- */
+function viewLearn(){
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Learn</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Curriculum</div><h2>Learn Geography</h2></div>
+    <p>Beginner to advanced · ${TOPICS.length} topics across ${CATEGORIES.length} subject areas.</p>
+  </div>
+  <div class="grid g3">${CATEGORIES.map(catCard).join("")}</div>
+  `;
+}
+function viewCategory(id){
+  const c = CATEGORIES.find(x => x.id === id);
+  if (!c) return `<div class="empty">Category not found.</div>`;
+  const list = TOPICS.filter(t => t.cat === id);
+  const done = list.filter(t => store.data.completed[t.id]).length;
+  const pct = list.length ? Math.round(done/list.length*100) : 0;
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <button data-nav="learn">Learn</button> › <span>${esc(c.name)}</span></div>
+  <section class="card" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <div style="font-size:38px">${c.icon}</div>
+    <div style="flex:1;min-width:220px">
+      <h2 style="font-size:22px;font-weight:760;letter-spacing:-.5px">${esc(c.name)}</h2>
+      <p class="muted small" style="margin-top:5px">${esc(c.blurb)}</p>
+    </div>
+    <div style="min-width:180px">
+      <div class="row" style="justify-content:space-between"><span class="tiny muted">Progress</span><span class="tiny">${pct}%</span></div>
+      <div class="bar" style="margin-top:7px"><i style="width:${pct}%"></i></div>
+    </div>
+  </section>
+  <div class="grid g3" style="margin-top:18px">${list.map(topicCard).join("")}</div>
+  `;
+}
+
+/* ---------------- TOPIC ---------------- */
+function viewTopic(id){
+  const t = topicById(id);
+  if (!t) return `<div class="empty">Topic not found.</div>`;
+  pushRecent(id);
+  const done = !!store.data.completed[id];
+  const bm = !!store.data.bookmarks[id];
+  const cat = catById(t.cat);
+
+  return `
+  <div class="crumbs">
+    <button data-nav="home">Home</button> › <button data-nav="learn">Learn</button> ›
+    <button data-nav="category" data-param="${t.cat}">${esc(cat.name)}</button> › <span>${esc(t.title)}</span>
+  </div>
+
+  <section class="card" style="padding:26px">
+    <div class="row wrap" style="gap:14px">
+      <span style="font-size:34px">${t.icon}</span>
+      <div style="flex:1;min-width:200px">
+        <span class="chip" style="margin-bottom:8px">${esc(cat.name)}</span>
+        <h2 style="font-size:26px;font-weight:780;letter-spacing:-.7px">${esc(t.title)}</h2>
+      </div>
+    </div>
+    <p style="margin-top:14px;font-size:15px;color:var(--muted);max-width:80ch">${esc(t.summary)}</p>
+    <div class="row wrap" style="margin-top:18px">
+      <button class="btn ${done?"":"primary"}" id="completeBtn">${done ? "✓ Completed" : "Mark as completed"}</button>
+      <button class="btn" id="bookmarkBtn">${bm ? "🔖 Bookmarked" : "🔖 Bookmark"}</button>
+      <button class="btn" data-nav="explore">🌐 Explore on Earth</button>
+    </div>
+  </section>
+
+  ${t.viz ? `
+  <section class="card" style="margin-top:20px">
+    <div class="eyebrow">Interactive visualisation</div>
+    <h3 style="font-size:17px;font-weight:730;margin-bottom:12px">${t.viz === "tectonics" ? "Plate boundary motion" : "The water cycle"}</h3>
+    ${t.viz === "tectonics" ? `
+      <div class="seg-ctrl" id="tectCtrls">
+        <button data-mode="convergent" class="active">Convergent</button>
+        <button data-mode="divergent">Divergent</button>
+        <button data-mode="transform">Transform</button>
+      </div>` : ""}
+    <canvas class="viz" id="topicViz"></canvas>
+    <p class="tiny muted" style="margin-top:8px">Schematic animation — not to scale. Shows the mechanism, not a specific location.</p>
+  </section>` : ""}
+
+  <div class="grid g2" style="margin-top:20px;align-items:start">
+    <div>
+      ${t.s.map(([h,p]) => `<section class="card" style="margin-bottom:14px">
+        <h3 style="font-size:15.5px;font-weight:700">${esc(h)}</h3>
+        <p style="margin-top:8px;font-size:13.5px;line-height:1.65">${esc(p)}</p>
+      </section>`).join("")}
+    </div>
+    <div>
+      ${whyBlock(t.why)}
+      <section class="card" style="margin-top:22px">
+        <div class="eyebrow">Quick actions</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:10px">Keep exploring</h3>
+        <div class="grid" style="gap:8px">
+          <button class="btn sm" data-nav="explore">Open layer on the globe</button>
+          <button class="btn sm" data-nav="quizzes">Test yourself with a quiz</button>
+          <button class="btn sm" data-nav="timeline">See it on the geological timeline</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  ${relatedBlock(t.rel)}
+  ${refsBlock(t.refs)}
+  `;
+}
+
+/* ---------------- EXPLORE (globe) ---------------- */
+const LAYERS = [
+  { id:"political",  label:"Political" },
+  { id:"physical",   label:"Physical" },
+  { id:"geological", label:"Geological" },
+  { id:"climate",    label:"Climate" },
+  { id:"population", label:"Population" },
+  { id:"disasters",  label:"Natural Disasters" }
+];
+function viewExplore(){
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Explore Earth</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Interactive 3D globe</div><h2>Explore Earth</h2></div>
+    <p>Switch layers, drag to rotate, scroll to zoom, click markers for details.</p>
+  </div>
+  <div class="globe-stage">
+    <div class="layerbar" id="layerbar">
+      ${LAYERS.map(l => `<button class="layerbtn ${l.id===Globe.getLayer()?"active":""}" data-layer="${l.id}">${l.label}</button>`).join("")}
+    </div>
+    <div class="globe-wrap" data-globe="explore" style="position:absolute;inset:0"></div>
+    <div class="globe-info" id="globeInfo">
+      <h4>Tap a marker</h4>
+      <p>Select any point on the globe to see what it represents. Markers are indicative locations, not precise survey data.</p>
+    </div>
+  </div>
+  <section class="card" style="margin-top:18px">
+    <h3 style="font-size:15px">About the globe</h3>
+    <p class="small" style="margin-top:8px">This prototype renders a stylised, simplified land outline with a real equirectangular projection, so positions correspond to actual latitude and longitude. It is intended for learning orientation and exploring layers — it is <strong>not</strong> a survey-grade basemap, and it deliberately does not draw international boundaries, which would require an authoritative boundary dataset.</p>
+    <p class="small" style="margin-top:8px">To display accurate political boundaries and detailed physical layers, connect a vector-tile or GeoJSON source (for example Natural Earth or an official national mapping agency dataset) through the data layer — the globe component reads markers and lines from a single data structure, so it can be swapped without rewriting the interface.</p>
+  </section>
+  `;
+}
+
+/* ---------------- TIMELINE ---------------- */
+function viewTimeline(){
+  const total = 4600;
+  const segs = TIMELINE.map(p => {
+    const w = ((p.from - p.to) / total * 100);
+    return `<div class="tl-seg" style="flex:0 0 ${w}%;background:${p.color}" data-era="${p.id}" title="${esc(p.name)}: ${maToLabel(p.from)} – ${maToLabel(p.to)}">
+      ${w > 7 ? esc(p.name) : ""}
+    </div>`;
+  }).join("");
+
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Earth Through Time</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Flagship mode</div><h2>Earth Through Time</h2></div>
+    <p>Scrub through 4.6 billion years. Dates are approximate and carry scientific uncertainty.</p>
+  </div>
+
+  <section class="card">
+    <div class="tl-track" id="tlTrack">${segs}</div>
+    <input class="tl-slider" id="tlSlider" type="range" min="0" max="4600" value="4600" step="1"
+      aria-label="Geological time slider — move to travel through Earth history"/>
+    <div class="tl-marks">
+      <span>4.6 Ga</span><span>3.5 Ga</span><span>2.5 Ga</span><span>1.0 Ga</span><span>541 Ma</span><span>252 Ma</span><span>66 Ma</span><span>Today</span>
+    </div>
+  </section>
+
+  <div class="grid g2" style="margin-top:18px;align-items:start">
+    <section class="card" id="eraPanel"></section>
+    <section class="card">
+      <div class="eyebrow">Period explorer</div>
+      <h3 style="font-size:16px;font-weight:730;margin-bottom:12px">Phanerozoic periods</h3>
+      <div class="grid" style="gap:7px">
+        ${PERIODS.map(p => `
+          <button class="row" style="gap:12px;width:100%;text-align:left;padding:9px 11px;border-radius:11px;border:1px solid var(--border);background:var(--panel);cursor:pointer" data-period="${p.name}">
+            <span style="width:9px;height:9px;border-radius:99px;background:${p.color};flex:none"></span>
+            <span style="flex:1;font-size:13px;font-weight:600">${esc(p.name)}</span>
+            <span class="tiny muted">${p.from}–${p.to} Ma</span>
+          </button>`).join("")}
+      </div>
+      <div id="periodDetail" style="margin-top:14px"></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h3 style="font-size:15px">How to read this timeline</h3>
+    <p class="small" style="margin-top:8px">Geological time is divided into eons, eras, periods and epochs. Boundaries are defined by the rock record — usually by major changes in fossils or by radiometric dates. Older dates carry larger uncertainties: a boundary at 2,500 Ma may be uncertain by tens of millions of years, while a boundary at 66 Ma is typically constrained to within a few hundred thousand years.</p>
+  </section>
+
+  ${refsBlock(["usgsGeologicTime","britannica","smithsonian","nasaEarth"])}
+  `;
+}
+function renderEraPanel(ma){
+  const era = TIMELINE.find(p => ma <= p.from && ma >= p.to) || TIMELINE[TIMELINE.length-1];
+  const panel = $("#eraPanel");
+  if (!panel) return;
+  panel.innerHTML = `
+    <div class="row" style="gap:10px;align-items:center">
+      <span style="width:12px;height:12px;border-radius:99px;background:${era.color}"></span>
+      <span class="chip">${esc(era.eon)}</span>
+      <span class="chip accent">${maToLabel(era.from)} – ${maToLabel(era.to)}</span>
+    </div>
+    <h3 style="font-size:22px;font-weight:770;margin-top:12px;letter-spacing:-.5px">${esc(era.name)}</h3>
+    <p class="small muted" style="margin-top:4px">${maToYears(ma)} · position on the timeline</p>
+    <div class="divider"></div>
+    <dl class="kv">
+      <dt>Major events</dt><dd>${esc(era.events)}</dd>
+      <dt>Climate</dt><dd>${esc(era.climate)}</dd>
+      <dt>Continents</dt><dd>${esc(era.continents)}</dd>
+      <dt>Oceans</dt><dd>${esc(era.oceans)}</dd>
+      <dt>Life</dt><dd>${esc(era.life)}</dd>
+    </dl>
+    ${era.note ? `<p class="tiny muted" style="margin-top:12px">⚠ ${esc(era.note)}</p>` : ""}
+    <div class="row wrap" style="margin-top:16px">
+      <button class="btn sm" data-nav="topic" data-param="geological-time">Geological time scale</button>
+      <button class="btn sm" data-nav="topic" data-param="continental-drift">Continental drift</button>
+    </div>
+  `;
+}
+
+/* ---------------- COUNTRIES ---------------- */
+function viewCountries(){
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Countries</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Country explorer</div><h2>Explore Countries</h2></div>
+    <p>${COUNTRIES.length} country profiles with geography, culture, history and environment data.</p>
+  </div>
+  <div class="card">
+    <label class="searchbox" style="max-width:100%">
+      <span aria-hidden="true">🔎</span>
+      <input id="countryFilter" type="search" placeholder="Filter countries by name, capital or continent…" aria-label="Filter countries"/>
+    </label>
+    <div class="row wrap" style="margin-top:12px">
+      ${[...new Set(COUNTRIES.map(c => c.cont))].map(cont => `<button class="chip" data-cont="${esc(cont)}" style="cursor:pointer">${esc(cont)}</button>`).join("")}
+    </div>
+  </div>
+  <div class="grid g3" id="countryGrid" style="margin-top:18px">
+    ${COUNTRIES.map(c => `
+      <article class="card hoverable" data-nav="country" data-param="${esc(c.n)}" tabindex="0" style="cursor:pointer">
+        <div class="row" style="gap:12px">
+          <span class="flagbig" style="font-size:30px">${c.f}</span>
+          <div>
+            <h3>${esc(c.n)}</h3>
+            <p class="tiny muted">${esc(c.cap)} · ${esc(c.cont)}</p>
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;gap:16px">
+          <div><div class="tiny muted">Population</div><b style="font-size:13.5px">${(c.pop/1e6).toFixed(1)} M</b></div>
+          <div><div class="tiny muted">Area</div><b style="font-size:13.5px">${nf(c.area)} km²</b></div>
+        </div>
+      </article>`).join("")}
+  </div>
+  <p class="tiny muted" style="margin-top:18px">Population figures are approximate 2024 estimates (UN World Population Prospects). Area figures are approximate and vary by measurement method.</p>
+  `;
+}
+function viewCountry(name){
+  const c = countryByName(name);
+  if (!c) return `<div class="empty">Country not found. <button class="btn sm" data-nav="countries">Back to countries</button></div>`;
+  const neighbours = COUNTRIES.filter(o => o.cont === c.cont && o.n !== c.n).slice(0,5);
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <button data-nav="countries">Countries</button> › <span>${esc(c.n)}</span></div>
+
+  <section class="card" style="padding:24px">
+    <div class="row wrap" style="gap:16px">
+      <span class="flagbig">${c.f}</span>
+      <div style="flex:1;min-width:220px">
+        <h2 style="font-size:26px;font-weight:780;letter-spacing:-.6px">${esc(c.n)}</h2>
+        <p class="muted small">${esc(c.reg)} · ${esc(c.cont)}</p>
+      </div>
+      <button class="btn primary" id="showOnGlobe">🌐 Show on globe</button>
+    </div>
+    <div class="grid g4" style="margin-top:20px">
+      <div class="stat"><b>${(c.pop/1e6).toFixed(1)} M</b><span>Population (${c.popYear} est.)</span></div>
+      <div class="stat"><b>${nf(c.area)}</b><span>Area (km²)</span></div>
+      <div class="stat"><b>${esc(c.cap.split(",")[0])}</b><span>Capital</span></div>
+      <div class="stat"><b>${esc(c.cur.split("(")[0].trim())}</b><span>Currency</span></div>
+    </div>
+  </section>
+
+  <div class="grid g2" style="margin-top:18px;align-items:start">
+    <section class="card">
+      <h3 style="font-size:15.5px">Basic information</h3>
+      <dl class="kv" style="margin-top:12px">
+        <dt>Capital</dt><dd>${esc(c.cap)}</dd>
+        <dt>Continent</dt><dd>${esc(c.cont)}</dd>
+        <dt>Region</dt><dd>${esc(c.reg)}</dd>
+        <dt>Area</dt><dd>≈ ${nf(c.area)} km²</dd>
+        <dt>Population</dt><dd>≈ ${nf(c.pop)} (${c.popYear} estimate)</dd>
+        <dt>Currency</dt><dd>${esc(c.cur)}</dd>
+        <dt>Languages</dt><dd>${esc(c.lang)}</dd>
+        <dt>Calling code</dt><dd>${esc(c.code)}</dd>
+        <dt>Internet TLD</dt><dd>${esc(c.tld)}</dd>
+        <dt>Coordinates</dt><dd>≈ ${c.lat}°, ${c.lon}°</dd>
+      </dl>
+    </section>
+
+    <div>
+      <section class="card">
+        <h3 style="font-size:15.5px">Geography</h3>
+        <p style="margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.65">${esc(c.geo)}</p>
+      </section>
+      <section class="card" style="margin-top:14px">
+        <h3 style="font-size:15.5px">Historical &amp; geographical overview</h3>
+        <p style="margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.65">${esc(c.hist)}</p>
+      </section>
+      <section class="card" style="margin-top:14px">
+        <h3 style="font-size:15.5px">Environment &amp; natural risks</h3>
+        <p style="margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.65">${esc(c.env)}</p>
+      </section>
+    </div>
+  </div>
+
+  <section style="margin-top:24px">
+    <div class="eyebrow">Same region</div>
+    <h3 style="font-size:16px;font-weight:730;margin-bottom:12px">Neighbouring &amp; regional countries</h3>
+    <div class="grid g4">
+      ${neighbours.map(o => `<button class="card hoverable" style="text-align:left" data-nav="country" data-param="${esc(o.n)}">
+        <span style="font-size:20px">${o.f}</span>
+        <h3 style="margin-top:8px;font-size:13.5px">${esc(o.n)}</h3>
+        <p class="tiny muted">${esc(o.cap)}</p>
+      </button>`).join("")}
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:20px">
+    <h3 style="font-size:15px">Data note</h3>
+    <p class="small" style="margin-top:8px">Country statistics change over time. Population figures here are approximate ${c.popYear} estimates; area figures are approximate and depend on measurement method (especially for countries with disputed or undefined boundaries). For authoritative and current figures, consult the United Nations Statistics Division and the World Bank Open Data.</p>
+    <div class="row wrap" style="margin-top:12px">
+      <button class="btn sm" data-nav="topic" data-param="borders">Political geography</button>
+      <button class="btn sm" data-nav="topic" data-param="population">Population &amp; density</button>
+    </div>
+  </section>
+
+  ${refsBlock(["unPop","worldBank","britannica"])}
+  `;
+}
+
+/* ---------------- SEARCH ---------------- */
+function searchAll(q){
+  const term = q.trim().toLowerCase();
+  if (!term) return { topics:[], countries:[], periods:[] };
+  const topics = TOPICS.filter(t =>
+    t.title.toLowerCase().includes(term) || t.summary.toLowerCase().includes(term) ||
+    t.s.some(([,p]) => p.toLowerCase().includes(term)) || catById(t.cat).name.toLowerCase().includes(term));
+  const countries = COUNTRIES.filter(c =>
+    c.n.toLowerCase().includes(term) || c.cap.toLowerCase().includes(term) ||
+    c.cont.toLowerCase().includes(term) || c.reg.toLowerCase().includes(term));
+  const periods = TIMELINE.filter(p => p.name.toLowerCase().includes(term) || p.events.toLowerCase().includes(term))
+    .concat(PERIODS.filter(p => p.name.toLowerCase().includes(term)))
+    .slice(0,6);
+
+  // "why..." style natural-language mapping
+  if (topics.length === 0){
+    const map = { earthquake:"earthquakes", volcano:"volcanoes", mountain:"mountains", river:"rivers",
+      ocean:"oceans", climate:"climate-zones", rain:"water-cycle", monsoon:"monsoons",
+      glacier:"glaciers", desert:"deserts", tsunami:"tsunamis", plate:"plate-tectonics", border:"borders" };
+    for (const k in map){
+      if (term.includes(k)){ const t = topicById(map[k]); if (t) topics.push(t); }
+    }
+  }
+  return { topics, countries, periods };
+}
+function viewSearch(q){
+  const r = searchAll(q);
+  const total = r.topics.length + r.countries.length + r.periods.length;
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Search</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Results for</div><h2>“${esc(q)}”</h2></div>
+    <p>${total} result${total === 1 ? "" : "s"}</p>
+  </div>
+
+  ${total === 0 ? `<div class="empty">No results found for “${esc(q)}”. Try a country name, a landform, a process or a geological period.</div>` : ""}
+
+  ${r.countries.length ? `
+  <div class="eyebrow">Countries</div>
+  <div class="grid" style="gap:9px;margin-bottom:22px">
+    ${r.countries.map(c => `<div class="search-result" data-nav="country" data-param="${esc(c.n)}" tabindex="0">
+      <span class="r-ic">${c.f}</span>
+      <div><h3 style="font-size:14px">${esc(c.n)}</h3><p class="tiny muted">${esc(c.cap)} · ${esc(c.reg)}</p></div>
+    </div>`).join("")}
+  </div>` : ""}
+
+  ${r.topics.length ? `
+  <div class="eyebrow">Topics</div>
+  <div class="grid g3" style="margin-bottom:22px">${r.topics.map(topicCard).join("")}</div>` : ""}
+
+  ${r.periods.length ? `
+  <div class="eyebrow">Geological time</div>
+  <div class="grid" style="gap:9px">
+    ${r.periods.map(p => `<div class="search-result" data-nav="timeline" tabindex="0">
+      <span class="r-ic">⏳</span>
+      <div><h3 style="font-size:14px">${esc(p.name)}</h3>
+      <p class="tiny muted">${p.from != null ? `${maToLabel(p.from)} – ${maToLabel(p.to)}` : ""} ${esc(p.note || p.events || "")}</p></div>
+    </div>`).join("")}
+  </div>` : ""}
+  `;
+}
+
+/* ---------------- QUIZZES ---------------- */
+let quizState = { i:0, score:0, answered:false };
+function viewQuizzes(){
+  quizState = { i:0, score:0, answered:false };
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Quizzes</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Interactive learning</div><h2>Test Your Knowledge</h2></div>
+    <p>${QUIZZES.length} questions · best score: ${store.data.quizBest}/${QUIZZES.length}</p>
+  </div>
+  <div id="quizBox"></div>
+  `;
+}
+function renderQuiz(){
+  const box = $("#quizBox"); if (!box) return;
+  const q = QUIZZES[quizState.i];
+  if (!q){
+    const pct = Math.round(quizState.score / QUIZZES.length * 100);
+    if (quizState.score > store.data.quizBest){ store.data.quizBest = quizState.score; store.save(); }
+    box.innerHTML = `<section class="card" style="text-align:center;padding:44px">
+      <div style="font-size:44px">${pct >= 80 ? "🏆" : pct >= 50 ? "👍" : "📚"}</div>
+      <h2 style="margin-top:12px;font-size:24px;font-weight:770">${quizState.score} / ${QUIZZES.length}</h2>
+      <p class="muted" style="margin-top:6px">${pct}% correct</p>
+      <div class="row" style="justify-content:center;margin-top:20px">
+        <button class="btn primary" id="quizRestart">Try again</button>
+        <button class="btn" data-nav="progress">View progress</button>
+      </div>
+    </section>`;
+    $("#quizRestart").addEventListener("click", () => { quizState = { i:0, score:0, answered:false }; renderQuiz(); });
+    return;
+  }
+  box.innerHTML = `
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <span class="chip">Question ${quizState.i+1} of ${QUIZZES.length}</span>
+        <span class="chip accent">Score ${quizState.score}</span>
+      </div>
+      <div class="bar" style="margin:14px 0 20px"><i style="width:${(quizState.i/QUIZZES.length)*100}%"></i></div>
+      <h3 style="font-size:17px;font-weight:700;line-height:1.45">${esc(q.q)}</h3>
+      <div style="margin-top:18px" id="quizOpts">
+        ${q.o.map((o,i) => `<button class="quiz-opt" data-opt="${i}">${esc(o)}</button>`).join("")}
+      </div>
+      <div id="quizFeedback" style="margin-top:14px"></div>
+    </section>`;
+  $("#quizOpts").addEventListener("click", e => {
+    const b = e.target.closest("[data-opt]"); if (!b || quizState.answered) return;
+    quizState.answered = true;
+    const chosen = +b.dataset.opt;
+    const correct = chosen === q.a;
+    if (correct) quizState.score++;
+    $$("#quizOpts .quiz-opt").forEach((btn, i) => {
+      btn.disabled = true;
+      if (i === q.a) btn.classList.add("correct");
+      else if (i === chosen) btn.classList.add("wrong");
+    });
+    const t = topicById(q.topic);
+    $("#quizFeedback").innerHTML = `
+      <div class="card" style="background:var(--panel-2);padding:14px">
+        <strong style="font-size:13.5px">${correct ? "✓ Correct" : "✕ Not quite"}</strong>
+        <p class="small" style="margin-top:6px">${esc(q.ex)}</p>
+        <div class="row wrap" style="margin-top:12px">
+          ${t ? `<button class="btn sm" data-nav="topic" data-param="${t.id}">Review: ${esc(t.title)}</button>` : ""}
+          <button class="btn sm primary" id="quizNext">${quizState.i === QUIZZES.length-1 ? "See results" : "Next question →"}</button>
+        </div>
+      </div>`;
+    $("#quizNext").addEventListener("click", () => {
+      quizState.i++; quizState.answered = false; renderQuiz();
+    });
+  });
+}
+
+/* ---------------- BOOKMARKS ---------------- */
+function viewBookmarks(){
+  const ids = Object.keys(store.data.bookmarks);
+  const items = ids.map(topicById).filter(Boolean);
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Bookmarks</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Saved for later</div><h2>Bookmarks</h2></div>
+    <p>${items.length} saved topic${items.length === 1 ? "" : "s"}</p>
+  </div>
+  ${items.length ? `<div class="grid g3">${items.map(topicCard).join("")}</div>`
+    : `<div class="empty">No bookmarks yet. Open any topic and press “🔖 Bookmark” to save it here.</div>`}
+  `;
+}
+
+/* ---------------- PROGRESS ---------------- */
+function viewProgress(){
+  const totalTopics = TOPICS.length;
+  const doneCount = Object.keys(store.data.completed).length;
+  const overall = totalTopics ? Math.round(doneCount/totalTopics*100) : 0;
+  const recent = store.data.recent.map(topicById).filter(Boolean).slice(0,5);
+
+  return `
+  <div class="crumbs"><button data-nav="home">Home</button> › <span>Progress</span></div>
+  <div class="section-head" style="margin-top:0">
+    <div><div class="eyebrow">Learning dashboard</div><h2>Your Geography Progress</h2></div>
+    <p>${doneCount} of ${totalTopics} topics completed · ${overall}% overall</p>
+  </div>
+
+  <section class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h3 style="font-size:15px">Overall completion</h3>
+      <span class="chip accent">${overall}%</span>
+    </div>
+    <div class="bar" style="height:10px"><i style="width:${overall}%"></i></div>
+  </section>
+
+  <div class="grid g2" style="margin-top:18px">
+    <section class="card">
+      <h3 style="font-size:15.5px;margin-bottom:14px">By subject area</h3>
+      <div class="grid" style="gap:14px">
+        ${CATEGORIES.map(c => {
+          const list = TOPICS.filter(t => t.cat === c.id);
+          const done = list.filter(t => store.data.completed[t.id]).length;
+          const pct = list.length ? Math.round(done/list.length*100) : 0;
+          return `<div>
+            <div class="row" style="justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:13px">${c.icon} ${esc(c.name)}</span>
+              <span class="tiny muted">${pct}%</span>
+            </div>
+            <div class="bar"><i style="width:${pct}%"></i></div>
+          </div>`;
+        }).join("")}
+      </div>
+    </section>
+
+    <div>
+      <section class="card">
+        <h3 style="font-size:15.5px">Quiz performance</h3>
+        <p class="small muted" style="margin-top:6px">Best score: <strong>${store.data.quizBest} / ${QUIZZES.length}</strong></p>
+        <div class="bar" style="margin-top:12px"><i style="width:${Math.round(store.data.quizBest/QUIZZES.length*100)}%"></i></div>
+        <button class="btn sm primary" style="margin-top:14px" data-nav="quizzes">Take a quiz</button>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <h3 style="font-size:15.5px">Recently explored</h3>
+        ${recent.length ? `<div class="grid" style="gap:8px;margin-top:12px">
+          ${recent.map(t => `<button class="row" style="gap:10px;width:100%;text-align:left;padding:9px 11px;border-radius:11px;border:1px solid var(--border);background:var(--panel);cursor:pointer" data-nav="topic" data-param="${t.id}">
+            <span>${t.icon}</span><span style="font-size:13px;flex:1">${esc(t.title)}</span>
+            ${store.data.completed[t.id] ? '<span class="chip green tiny">✓</span>' : ""}
+          </button>`).join("")}
+        </div>` : `<p class="small muted" style="margin-top:8px">Nothing yet — start exploring a topic.</p>`}
+      </section>
+    </div>
+  </div>
+  `;
+}
+
+/* ==========================================================================
+   13. ROUTER
+   ========================================================================== */
+let currentRoute = { name:"home", param:null };
+
+function navigate(name, param){
+  currentRoute = { name, param };
+  render();
+  window.scrollTo({ top:0, behavior: reduced ? "auto" : "smooth" });
+  $("#view").focus({ preventScroll:true });
+}
+
+function render(){
+  stopViz();
+  Globe.unmount();
+  const v = $("#view");
+  const { name, param } = currentRoute;
+
+  let html = "";
+  switch(name){
+    case "home":      html = viewHome(); break;
+    case "learn":     html = viewLearn(); break;
+    case "category":  html = viewCategory(param); break;
+    case "topic":     html = viewTopic(param); break;
+    case "explore":   html = viewExplore(); break;
+    case "timeline":  html = viewTimeline(); break;
+    case "countries": html = viewCountries(); break;
+    case "country":   html = viewCountry(param); break;
+    case "search":    html = viewSearch(param || ""); break;
+    case "quizzes":   html = viewQuizzes(); break;
+    case "bookmarks": html = viewBookmarks(); break;
+    case "progress":  html = viewProgress(); break;
+    default:          html = viewHome();
+  }
+  v.innerHTML = html;
+  renderNav(name);
+
+  /* ---- view-specific wiring ---- */
+  if (name === "home"){
+    const el = $('[data-globe="home"]');
+    if (el) Globe.mount(el, { onSelect: handleGlobeSelect });
+    const cs = $("#homeCountrySearch");
+    if (cs) cs.addEventListener("keydown", e => {
+      if (e.key === "Enter" && cs.value.trim()){
+        const c = countryByName(cs.value.trim());
+        if (c) navigate("country", c.n); else navigate("search", cs.value.trim());
+      }
+    });
+    buildMiniTimeline();
+  }
+
+  if (name === "explore"){
+    const el = $('[data-globe="explore"]');
+    if (el) Globe.mount(el, { onSelect: handleGlobeSelect });
+    $("#layerbar").addEventListener("click", e => {
+      const b = e.target.closest("[data-layer]"); if (!b) return;
+      $$("#layerbar .layerbtn").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      Globe.setLayer(b.dataset.layer);
+      const info = $("#globeInfo");
+      info.innerHTML = `<h4>${esc(b.textContent)} layer</h4><p>${layerDescription(b.dataset.layer)}</p>`;
+    });
+  }
+
+  if (name === "timeline"){
+    const slider = $("#tlSlider");
+    const update = () => { renderEraPanel(+slider.value); };
+    slider.addEventListener("input", update);
+    update();
+    $("#tlTrack").addEventListener("click", e => {
+      const seg = e.target.closest("[data-era]"); if (!seg) return;
+      const era = TIMELINE.find(x => x.id === seg.dataset.era);
+      if (era){ slider.value = Math.round((era.from + era.to)/2); update(); }
+    });
+    $$("[data-period]").forEach(b => b.addEventListener("click", () => {
+      const p = PERIODS.find(x => x.name === b.dataset.period);
+      const d = $("#periodDetail");
+      if (!p) return;
+      d.innerHTML = `<div class="card" style="background:var(--panel-2);padding:14px">
+        <div class="row" style="gap:9px"><span style="width:10px;height:10px;border-radius:99px;background:${p.color}"></span>
+        <strong style="font-size:14px">${esc(p.name)}</strong>
+        <span class="chip tiny">${esc(p.era)}</span></div>
+        <p class="small muted" style="margin-top:8px">${p.from}–${p.to} Ma (approximately ${((p.from-p.to)).toFixed(0)} million years)</p>
+        <p class="small" style="margin-top:8px">${esc(p.note)}</p>
+      </div>`;
+    }));
+  }
+
+  if (name === "countries"){
+    const filter = $("#countryFilter");
+    const grid = $("#countryGrid");
+    const apply = (term, cont) => {
+      const t = (term || "").toLowerCase();
+      grid.innerHTML = COUNTRIES.filter(c =>
+        (!t || c.n.toLowerCase().includes(t) || c.cap.toLowerCase().includes(t) || c.cont.toLowerCase().includes(t)) &&
+        (!cont || c.cont === cont)
+      ).map(c => `
+        <article class="card hoverable" data-nav="country" data-param="${esc(c.n)}" tabindex="0" style="cursor:pointer">
+          <div class="row" style="gap:12px">
+            <span class="flagbig" style="font-size:30px">${c.f}</span>
+            <div><h3>${esc(c.n)}</h3><p class="tiny muted">${esc(c.cap)} · ${esc(c.cont)}</p></div>
+          </div>
+          <div class="row" style="margin-top:14px;gap:16px">
+            <div><div class="tiny muted">Population</div><b style="font-size:13.5px">${(c.pop/1e6).toFixed(1)} M</b></div>
+            <div><div class="tiny muted">Area</div><b style="font-size:13.5px">${nf(c.area)} km²</b></div>
+          </div>
+        </article>`).join("") || `<div class="empty" style="grid-column:1/-1">No countries match that filter.</div>`;
+    };
+    let cont = null;
+    filter.addEventListener("input", () => apply(filter.value, cont));
+    $$("[data-cont]").forEach(b => b.addEventListener("click", () => {
+      const val = b.dataset.cont;
+      cont = (cont === val) ? null : val;
+      $$("[data-cont]").forEach(x => x.classList.toggle("accent", x.dataset.cont === cont));
+      apply(filter.value, cont);
+    }));
+  }
+
+  if (name === "country"){
+    const btn = $("#showOnGlobe");
+    const c = countryByName(param);
+    if (btn && c) btn.addEventListener("click", () => {
+      Globe.setLayer("political");
+      navigate("explore");
+      setTimeout(() => Globe.focus(c.lat, c.lon), 80);
+      toast(`Focused on ${c.n}`);
+    });
+  }
+
+  if (name === "quizzes") renderQuiz();
+
+  if (name === "topic"){
+    const t = topicById(param);
+    if (t){
+      $("#completeBtn").addEventListener("click", () => {
+        const now = !store.data.completed[t.id];
+        markComplete(t.id, now);
+        toast(now ? "Marked as completed ✓" : "Marked as not completed");
+        render();
+      });
+      $("#bookmarkBtn").addEventListener("click", () => {
+        const on = toggleBookmark(t.id);
+        toast(on ? "Bookmarked 🔖" : "Bookmark removed");
+        render();
+      });
+      if (t.viz === "tectonics"){
+        const cv = $("#topicViz");
+        const viz = TectonicsViz(cv);
+        viz.start();
+        $("#tectCtrls").addEventListener("click", e => {
+          const b = e.target.closest("[data-mode]"); if (!b) return;
+          $$("#tectCtrls button").forEach(x => x.classList.remove("active"));
+          b.classList.add("active");
+          viz.setMode(b.dataset.mode);
+        });
+      } else if (t.viz === "watercycle"){
+        const viz = WaterCycleViz($("#topicViz"));
+        viz.start();
+      }
+    }
+  }
+}
+
+function layerDescription(id){
+  return {
+    political:"Country markers. Selecting one opens its full profile. In production this layer would render authoritative boundary polygons from a GeoJSON/tile source.",
+    physical:"Major mountain ranges, deserts, river basins and reefs — the large-scale features of the natural landscape.",
+    geological:"Indicative tectonic plate boundaries, ridges and volcanic provinces. Lines are simplified for illustration.",
+    climate:"Representative locations of Köppen climate zones. Real climate regions are irregular and are shown here only as guide points.",
+    population:"Countries sized by approximate population. Larger marker = larger population.",
+    disasters:"Indicative hazard belts — seismic zones, hurricane tracks and tornado regions."
+  }[id] || "";
+}
+
+function handleGlobeSelect(data){
+  const info = $("#globeInfo");
+  if (data.nav === "country"){ navigate("country", data.param); return; }
+  if (data.nav === "topic"){ navigate("topic", data.param); return; }
+  if (data.nav === "search"){ navigate("search", data.param); return; }
+  if (info){
+    info.innerHTML = `<h4>${esc(data.title || "Location")}</h4><p>${esc(data.sub || "")}</p>`;
+  }
+}
+
+/* ---------- Mini timeline on the homepage ---------- */
+function buildMiniTimeline(){
+  const host = $("#miniTimeline");
+  if (!host) return;
+  const total = 4600;
+  host.innerHTML = `
+    <div style="padding:18px">
+      <div class="tl-track" style="height:46px">
+        ${TIMELINE.map(p => {
+          const w = (p.from - p.to)/total*100;
+          return `<div class="tl-seg" style="flex:0 0 ${w}%;background:${p.color}" data-mini="${p.id}">${w>7?esc(p.name):""}</div>`;
+        }).join("")}
+      </div>
+      <div id="miniInfo" style="margin-top:16px"></div>
+    </div>`;
+  const info = $("#miniInfo");
+  const show = id => {
+    const p = TIMELINE.find(x => x.id === id);
+    if (!p) return;
+    info.innerHTML = `
+      <div class="row wrap" style="gap:10px">
+        <span class="chip accent">${maToLabel(p.from)} – ${maToLabel(p.to)}</span>
+        <span class="chip">${esc(p.eon)}</span>
+      </div>
+      <h3 style="font-size:18px;font-weight:750;margin-top:10px">${esc(p.name)}</h3>
+      <p class="small muted" style="margin-top:6px"><strong>Continents:</strong> ${esc(p.continents)}</p>
+      <p class="small muted" style="margin-top:4px"><strong>Life:</strong> ${esc(p.life)}</p>
+      <div class="row wrap" style="margin-top:12px">
+        <button class="btn sm" data-nav="timeline">Open full timeline</button>
+      </div>`;
+  };
+  host.addEventListener("click", e => {
+    const seg = e.target.closest("[data-mini]");
+    if (seg) show(seg.dataset.mini);
+  });
+  show("hadean");
+}
+
+/* ==========================================================================
+   14. GLOBAL EVENT DELEGATION
+   ========================================================================== */
+document.addEventListener("click", e => {
+  const nav = e.target.closest("[data-nav]");
+  if (nav){ e.preventDefault(); navigate(nav.dataset.nav, nav.dataset.param); return; }
+  const bm = e.target.closest("[data-bookmark-toggle]");
+  if (bm){ e.preventDefault(); toggleBookmark(bm.dataset.bookmarkToggle); toast("Bookmark updated"); render(); }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.matches("[data-nav][tabindex]")) e.target.click();
+  if (e.key === "/" && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); $("#globalSearch").focus(); }
+});
+
+/* ---------- Global search ---------- */
+let searchTimer;
+$("#globalSearch").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  const v = e.target.value;
+  searchTimer = setTimeout(() => {
+    if (v.trim().length >= 2) navigate("search", v.trim());
+    else if (currentRoute.name === "search") navigate("home");
+  }, 320);
+});
+
+/* ---------- Theme ---------- */
+function applyTheme(theme){
+  document.documentElement.dataset.theme = theme;
+  store.data.theme = theme; store.save();
+  $("#themeToggle").textContent = theme === "dark" ? "🌙" : "☀️";
+  Globe.setTheme(theme);
+}
+$("#themeToggle").addEventListener("click", () => {
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+});
+
+/* ==========================================================================
+   15. INIT
+   ========================================================================== */
+applyTheme(store.data.theme || "dark");
+navigate("home");
+</script>
+</body>
+</html>

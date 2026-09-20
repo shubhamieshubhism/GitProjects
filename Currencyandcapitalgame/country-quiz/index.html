@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1120" />
+  <title>Country Quiz - Capitals and Currencies</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="app">
+    <header class="brand">
+      <div class="brand-badge" aria-hidden="true">🌍</div>
+      <div class="brand-text">
+        Country Quiz
+        <span>Capitals &amp; Currencies</span>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- ============ SCREEN 1: MODE SELECT ============ -->
+      <section id="screen-start" class="screen is-active" aria-label="Mode selection">
+        <div class="card hero-card">
+          <p class="eyebrow">Geography Quiz</p>
+          <h1 class="hero-title">How well do you know the world?</h1>
+          <p class="hero-sub">
+            10 questions, 4 options each, a flag for every country.
+            Pick a mode to begin.
+          </p>
+
+          <div class="mode-grid">
+            <button id="btn-mode-capital" class="mode-btn" type="button">
+              <span class="mode-icon" aria-hidden="true">🏛️</span>
+              <span class="mode-name">Capital Quiz</span>
+              <span class="mode-desc">Guess the capital city of each country</span>
+            </button>
+
+            <button id="btn-mode-currency" class="mode-btn" type="button">
+              <span class="mode-icon" aria-hidden="true">💰</span>
+              <span class="mode-name">Currency Quiz</span>
+              <span class="mode-desc">Guess the currency used in each country</span>
+            </button>
+          </div>
+
+          <p class="hint">Tip: press <kbd>1</kbd>-<kbd>4</kbd> to answer, <kbd>Enter</kbd> for the next question.</p>
+        </div>
+      </section>
+
+      <!-- ============ SCREEN 2: QUIZ ============ -->
+      <section id="screen-quiz" class="screen" aria-label="Quiz">
+
+        <div class="hud">
+          <div class="hud-item">
+            <span class="hud-label">Score</span>
+            <span id="hud-score" class="hud-value">0 / 10</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">Question</span>
+            <span id="hud-progress" class="hud-value">1 of 10</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">Mode</span>
+            <span id="hud-mode" class="hud-value">Capitals</span>
+          </div>
+        </div>
+
+        <div class="progress-track" role="presentation">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div id="question-card" class="card question-card">
+
+          <div class="flag-wrap">
+            <img id="flag-img" class="flag" src="" alt="" />
+            <div id="flag-fallback" class="flag-fallback" hidden></div>
+          </div>
+
+          <p id="question-text" class="question-text"></p>
+
+          <div id="options" class="options" role="group" aria-label="Answer options"></div>
+
+          <p id="feedback" class="feedback" aria-live="polite"></p>
+
+          <div class="actions">
+            <button id="btn-next" class="btn btn-primary" type="button">Next Question</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SCREEN 3: RESULTS ============ -->
+      <section id="screen-results" class="screen" aria-label="Results">
+        <div class="card results-card">
+          <div id="results-emoji" class="results-emoji" aria-hidden="true">🎉</div>
+          <h2 id="results-title" class="results-title">Nice work!</h2>
+          <p id="results-score" class="results-score">0 / 10</p>
+          <p id="results-message" class="results-message"></p>
+
+          <div class="actions actions-row">
+            <button id="btn-again" class="btn btn-primary" type="button">Play Again</button>
+            <button id="btn-change-mode" class="btn btn-ghost" type="button">Change Mode</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
